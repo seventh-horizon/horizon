@@ -1,5 +1,5 @@
 {
-  "chain_root": "a9184cf513e489113820654d39f34b17b2cd60c035473893d2549929dcc964dc",
+  "chain_root": "259b6e9137a49abe0da1a4b94f00950033e6ce654a04f8f11f0afa205572fd1c",
   "tags": [
     {
       "Phi": 18.6,
@@ -7,6 +7,13 @@
       "snapshot_sha256": "8ad1b6493b821ae664a3a42797f4fd4c41c1226e7288a144f644ec81ed4cd3b5",
       "tag": "v0.0.1",
       "tag_date_utc": "2025-10-14T00:00:00Z"
+    },
+    {
+      "Phi": 18.6,
+      "sha": "",
+      "snapshot_sha256": "fd3ba415a8e85c7e504a8b8ed4db149a1968ae20c7822a522b04e46f7afc7968",
+      "tag": "v0.0.2",
+      "tag_date_utc": "2025-10-14T12:00:00Z"
     }
   ],
   "version": 1
