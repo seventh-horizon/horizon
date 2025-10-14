@@ -1,0 +1,12 @@
+out/
+!.keep
+.nox/
+coverage.xml
+*.tgz
+*.tar.gz
+*.zip
+keys/*.key
+dist/
+node_modules/
+.next/
+.env
