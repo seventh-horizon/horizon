@@ -10,3 +10,13 @@ dist/
 node_modules/
 .next/
 .env
+# Seventh Horizon artifacts
+.seventh_horizon/runs/
+dump_*.tar.gz
+# Seventh Horizon artifacts
+.seventh_horizon/runs/
+dump_*.tar.gz
+# Seventh Horizon artifacts
+.seventh_horizon/runs/
+dump_*.tar.gz
+public/field/timeline/epoch_*.json

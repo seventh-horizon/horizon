@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+set -euo pipefail
+LATEST=".seventh_horizon/runs/latest"
+echo "Latest: $(readlink $LATEST)"
+echo "--- metadata.env ---"
+cat "$LATEST/metadata.env" || true
+echo "--- tail stdall.log ---"
+tail -n 20 "$LATEST/stdall.log" || true

@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+dependencies = ["numpy>=1.26", "matplotlib>=3.8", "pytest>=8"]
+name = "seventh-horizon"
+version = "0.1.0"
+description = "Seventh Horizon tooling"
+readme = "README.md"
+requires-python = ">=3.10"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["tools"]
+
+[project.scripts]
+dump-classifier = "tools.dump_classifier:main"
+dump-all = "tools.dump_all:main"
+dump-run = "tools.dump_run:main"
+build-timeline-index = "tools.build_timeline_index:main"
+make-snapshot = "tools.make_snapshot:main"
+validate-timeline = "tools.validate_timeline:main"
