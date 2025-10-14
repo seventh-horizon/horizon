@@ -1,0 +1,197 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Seventh Horizon — Latest Telemetry</title>
+<style>
+  :root { font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
+  body { margin: 24px; }
+  header { display:flex; gap:12px; align-items:center; margin-bottom:16px; flex-wrap: wrap; }
+  h1 { font-size:18px; margin:0; }
+  .pill { font-size:12px; padding:4px 8px; border:1px solid #ddd; border-radius:999px; }
+  #sparkline { width: 640px; height: 120px; border:1px solid #eee; margin:12px 0; }
+  table { border-collapse: collapse; width: 100%; font-size: 13px; }
+  th, td { border-bottom: 1px solid #eee; padding: 6px 8px; text-align: left; }
+  tfoot td { font-weight: 600; }
+  .muted { color:#777; }
+  .row { display:flex; gap:12px; align-items:center; margin: 4px 0 8px; flex-wrap: wrap; }
+  input[type=text] { width: 520px; max-width: 100%; padding:6px 8px; }
+  button { padding:6px 10px; cursor:pointer; }
+  .stats { display:flex; gap:16px; margin:8px 0 4px; font-size:13px; flex-wrap: wrap; }
+  pre { background:#fafafa; border:1px solid #eee; padding:8px; overflow:auto; max-height:240px; }
+</style>
+
+<header>
+  <h1>Seventh Horizon — Latest Telemetry</h1>
+  <span class="pill" id="runId">run: …</span>
+  <span class="pill" id="rows">rows: 0</span>
+  <span class="pill" id="timeRange">range: …</span>
+</header>
+
+<div class="row">
+  <label class="muted">CSV path:</label>
+  <input id="csvPath" type="text" value="../.seventh_horizon/runs/latest/telemetry.csv">
+  <button id="reload">Reload</button>
+  <label style="margin-left:8px;"><input id="auto" type="checkbox"> Auto-refresh</label>
+</div>
+
+<canvas id="sparkline" width="640" height="120"></canvas>
+<div class="stats">
+  <div><strong>Last Tags:</strong> <span id="lastTags" class="muted">—</span></div>
+  <div><strong>Last Git:</strong> <span id="lastGit" class="muted">—</span></div>
+  <div><strong>Python:</strong> <span id="pyVer" class="muted">—</span></div>
+</div>
+
+<div class="row">
+  <button id="loadMeta">Load metadata.env</button>
+  <span class="muted">Shows metadata for the currently loaded run.</span>
+</div>
+<pre id="metaBox" class="muted" hidden>—</pre>
+
+<table id="tbl">
+  <thead>
+    <tr>
+      <th>RunID</th><th>UTC</th><th>Tags</th><th>CWD</th><th>GitBranch</th><th>GitCommit</th><th>Python</th>
+    </tr>
+  </thead>
+  <tbody></tbody>
+  <tfoot><tr><td colspan="7" class="muted">Loaded <span id="rowCount">0</span> rows</td></tr></tfoot>
+</table>
+
+<script>
+(async function () {
+  const byId = (id) => document.getElementById(id);
+  const csvPathEl = byId('csvPath');
+  const reloadBtn = byId('reload');
+  const auto = byId('auto');
+  const runIdEl = byId('runId');
+  const rowsEl = byId('rows');
+  const rangeEl = byId('timeRange');
+  const lastTagsEl = byId('lastTags');
+  const lastGitEl = byId('lastGit');
+  const pyVerEl = byId('pyVer');
+  const tbody = byId('tbl').querySelector('tbody');
+  const rowCount = byId('rowCount');
+  const canvas = byId('sparkline');
+  const ctx = canvas.getContext('2d');
+  const loadMetaBtn = byId('loadMeta');
+  const metaBox = byId('metaBox');
+  let timer = null;
+
+  async function loadText(path) {
+    const res = await fetch(path);
+    if (!res.ok) throw new Error(`Fetch failed: ${res.status} ${res.statusText}`);
+    return await res.text();
+  }
+
+  async function loadCSV(path) {
+    const res = await fetch(path);
+    if (!res.ok) throw new Error(`Fetch failed: ${res.status} ${res.statusText}`);
+    const text = await res.text();
+    const lines = text.trim().split(/\r?\n/);
+    const header = lines.shift().split(',').map(s => s.trim());
+    const rows = lines.map(line => line.split(','));
+    return { header, rows };
+  }
+
+  function drawSpark(dates) {
+    const n = dates.length;
+    ctx.clearRect(0,0,canvas.width, canvas.height);
+    if (n < 2) return;
+    const diffs = [0];
+    for (let i=1;i<n;i++) {
+      const t0 = Date.parse(dates[i-1]); const t1 = Date.parse(dates[i]);
+      const dt = Math.max(0, (t1 - t0)/1000);
+      diffs.push(dt);
+    }
+    const w = canvas.width, h = canvas.height, pad=8;
+    const xStep = (w - 2*pad) / (n-1);
+    const maxY = Math.max(...diffs) || 1;
+    ctx.beginPath();
+    for (let i=0;i<n;i++) {
+      const x = pad + i*xStep;
+      const y = h - pad - (diffs[i]/maxY)*(h-2*pad);
+      if (i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+    }
+    ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(pad, h-pad); ctx.lineTo(w-pad, h-pad); ctx.stroke();
+  }
+
+  function fmtRange(dates) {
+    if (!dates.length) return '—';
+    const f = dates[0], l = dates[dates.length-1];
+    return new Date(f).toISOString().replace('T',' ').slice(0,19) + ' → ' +
+           new Date(l).toISOString().replace('T',' ').slice(0,19);
+  }
+
+  async function run(path) {
+    try {
+      const { header, rows } = await loadCSV(path);
+      tbody.innerHTML = '';
+      rows.forEach(r => {
+        const tr = document.createElement('tr');
+        r.forEach((cell) => {
+          const td = document.createElement('td');
+          td.textContent = cell;
+          tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+      });
+      rowCount.textContent = rows.length;
+      rowsEl.textContent = `rows: ${rows.length}`;
+
+      if (rows.length) {
+        const idx = Object.fromEntries(header.map((h,i)=>[h,i]));
+        const last = rows[rows.length-1];
+        const runId = last[idx['RunID']];
+        runIdEl.textContent = `run: ${runId}`;
+        lastTagsEl.textContent = last[idx['Tags']] || '—';
+        lastGitEl.textContent  = `${last[idx['GitBranch']]} @ ${last[idx['GitCommit']]}`;
+        pyVerEl.textContent    = last[idx['Python']] || '—';
+
+        const times = rows.map(r => r[idx['UTC']]);
+        rangeEl.textContent = `range: ${fmtRange(times)}`;
+        drawSpark(times);
+
+        if (!metaBox.hidden) {
+          const metaPath = `../.seventh_horizon/runs/${runId}/metadata.env`;
+          try { metaBox.textContent = await loadText(metaPath); } catch {}
+        }
+      } else {
+        runIdEl.textContent = 'run: —';
+        rangeEl.textContent = 'range: —';
+        lastTagsEl.textContent = '—';
+        lastGitEl.textContent = '—';
+        pyVerEl.textContent = '—';
+        ctx.clearRect(0,0,canvas.width,canvas.height);
+      }
+    } catch (e) {
+      alert('Error: ' + e.message + '\nPath: ' + path);
+      console.error(e);
+    }
+  }
+
+  reloadBtn.addEventListener('click', () => run(csvPathEl.value));
+  auto.addEventListener('change', () => {
+    if (auto.checked) {
+      timer = setInterval(() => run(csvPathEl.value), 5000);
+      run(csvPathEl.value);
+    } else {
+      clearInterval(timer); timer = null;
+    }
+  });
+  loadMetaBtn.addEventListener('click', async () => {
+    const label = runIdEl.textContent.replace(/^run:\s*/, '');
+    if (!label || label === '—') return alert('No rows loaded yet.');
+    const metaPath = `../.seventh_horizon/runs/${label}/metadata.env`;
+    try {
+      metaBox.textContent = await loadText(metaPath);
+      metaBox.hidden = false;
+      metaBox.scrollIntoView({behavior:'smooth', block:'nearest'});
+    } catch (e) {
+      alert('Could not load metadata.env: ' + e.message);
+      metaBox.hidden = true;
+    }
+  });
+
+  run(csvPathEl.value);
+})();
+</script>
