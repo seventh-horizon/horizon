@@ -103,7 +103,6 @@ def main():
         log.write_text(_safe(log.read_text(encoding="utf-8")), encoding="utf-8")
 
     out = out.resolve()
-    import sys
     if out.exists() and not args.force:
         sys.exit(f"Refusing to overwrite existing {out}. Use --force to override.")
     make_archive(tmp, out)
