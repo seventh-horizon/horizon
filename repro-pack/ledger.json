@@ -21,7 +21,7 @@
   "tools/__pycache__/embedding.cpython-311.pyc": "49cb9eb9eba38b0a2e24fb1d3b6466b9adabc60abb6829d23e6614acdebc5505",
   "tools/__pycache__/make_snapshot.cpython-311.pyc": "8a812f62e50a0a8fa4efe6f3b7d87cceb4722a29be5121329b7375aac72b751a",
   "tools/__pycache__/mds_tie_break.cpython-311.pyc": "8b189c69b6c5209addb3e84bb4b484c10bcdaeba1d1737bd7ff5a182f143b713",
-  "tools/__pycache__/validate-timeline.cpython-311.pyc": "c376106d51edcdebd188aa5448cb51c235c7b88ca794d9fec23240b5572562c2",
+  "tools/__pycache__/validate_timeline.cpython-311.pyc": "c376106d51edcdebd188aa5448cb51c235c7b88ca794d9fec23240b5572562c2",
   "tools/build_timeline_index.py": "ccb591c0e24a541429bdb361bda2f1b3cd8250266d621a707d14a38817150cb5",
   "tools/compute_field.py": "04646031df22e5e11b5db05fcd1081239edb5188d188cffa1b7b9b4948d0c1c3",
   "tools/constants.py": "5e0dcbae14d08011674066430e65e26089753520e76b28b8dd13b895ecb71d39",
@@ -36,6 +36,6 @@
   "tools/out/phi_trend.png": "fd7d4d4b68bd690a30b8c6591e4e817d6d0019ffc8fd88ba0ddd0c542ec38c9e",
   "tools/out/summary.json": "6876ea0a924cc076df6280b7e585b23a8aa3cc7fbe6f00ed54f206e3119ecafe",
   "tools/plot_field.py": "3e8cbc408a6fa66c129f99e78d52ae89c956f97bdb4b6fee26c92c2fa5e5b546",
-  "tools/validate-timeline.py": "a8ef69390c8ae20db0921c253194e533eccf7b1ae252bf3fa1ae4cdd7edcb2a0",
+  "tools/validate_timeline.py": "a8ef69390c8ae20db0921c253194e533eccf7b1ae252bf3fa1ae4cdd7edcb2a0",
   "vel/VEL_MANIFEST.schema.json": "0ddeef8e7093e682128f4a93efb39c979893f8b4ca57bf50ba59429fae26b59e"
 }

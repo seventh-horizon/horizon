@@ -466,8 +466,8 @@ if __name__ == "__main__":
 PY
 chmod 0755 tools/build_timeline_index.py
 
-# tools/validate-timeline.py
-cat > tools/validate-timeline.py <<'PY'
+# tools/validate_timeline.py
+cat > tools/validate_timeline.py <<'PY'
 #!/usr/bin/env python3
 import json, os, re, sys, hashlib, subprocess
 from pathlib import Path
@@ -545,7 +545,7 @@ def main():
 if __name__ == "__main__":
     main()
 PY
-chmod 0755 tools/validate-timeline.py
+chmod 0755 tools/validate_timeline.py
 
 # tests/test_plots_hash.py (determinism test)
 mkdir -p tests
