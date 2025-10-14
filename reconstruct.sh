@@ -1,1 +1,1 @@
-# paste the entire reconstruct.sh here
+bash reconstruct.sh
