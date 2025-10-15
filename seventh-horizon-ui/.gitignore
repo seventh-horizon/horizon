@@ -24,3 +24,5 @@ dist-ssr
 *.sw?
 !public/.seventh_horizon/
 !public/.seventh_horizon/**
+!public/.seventh_horizon/
+!public/.seventh_horizon/**
