@@ -2,61 +2,46 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Filtering', () => {
   test('global search input filters the table', async ({ page }) => {
-    // App is expected to be running on the default Vite port during e2e
+    // App is expected to be running via Playwright webServer (see playwright.config.ts)
     await page.goto('/');
 
-    // Locate the global search box (placeholder text shown in the UI)
     const search = page.getByPlaceholder(/search all columns/i);
+    const rows = page.locator('[data-test="row"]');
 
-    // If the search box isn't present in this build, skip gracefully.
-    if (!(await search.isVisible().catch(() => false))) {
-      test.skip(true, 'Global search input not present; skipping filtering test.');
-    }
+    // Count rows before filtering
+    const before = await rows.count();
 
-    // Helper: only count rows that look like *data* rows (have <td> cells and no colspan placeholder).
-    const dataRows = () =>
-      page
-        .locator('table tbody tr')
-        .filter({ has: page.locator('td') })
-        .filter({ hasNot: page.locator('td[colspan]') });
+    // Use a string that should match nothing
+    await search.fill('unmatchable-string-xyz-123');
+    await page.waitForTimeout(250);
 
-    // Baseline row count in the main results table
-    const initialCount = await dataRows().count();
+    const after = await rows.count();
 
-    // If there are no rows to filter, skip rather than fail
-    if (initialCount === 0) {
-      test.skip(true, 'No rows loaded; skipping filtering behavior check.');
-    }
+    // Should reduce row count
+    expect(after).toBeLessThan(before);
 
-    // 1) Type a common token that should narrow results (dataset-dependent)
-    await search.fill('run_');
+    // Allow for 0 or 1 row depending on an optional placeholder/spinner row
+    expect(after === 0 || after === 1).toBeTruthy();
 
-    // Wait for debounce / UI to settle by polling the row count once it changes or settles.
-    await page.waitForTimeout(150);
-    const filteredCount = await dataRows().count();
-
-    // Filtering should never increase visible rows
-    expect(filteredCount).toBeLessThanOrEqual(initialCount);
-
-    // Only demand a strict reduction if we started with 2+ rows.
-    if (initialCount >= 2) {
-      expect(filteredCount).toBeLessThan(initialCount);
-    }
-
-    // 2) Clear the search and ensure the count rebounds (best-effort)
+    // Cleanup
     await search.clear();
-    await page.waitForTimeout(150);
-    const reboundCount = await dataRows().count();
-    expect(reboundCount).toBeGreaterThanOrEqual(filteredCount);
+  });
 
-    // 3) Use a guaranteed no-match token to assert we can reach zero *data* rows
-    const NO_MATCH = '__no_match_9f1e__';
-    await search.fill(NO_MATCH);
+  test('clearing search restores rows', async ({ page }) => {
+    await page.goto('/');
 
-    // Wait until data row count is 0 (allowing a placeholder "no data" row to exist)
-    await expect(dataRows()).toHaveCount(0);
+    const search = page.getByPlaceholder(/search all columns/i);
+    const rows = page.locator('[data-test="row"]');
 
-    // Cleanup: clear search
+    const base = await rows.count();
+    await search.fill('unmatchable-string-xyz-123');
+    await page.waitForTimeout(250);
+
+    // Now clear and expect to bounce back to at least the original count
     await search.clear();
+    await page.waitForTimeout(250);
+
+    const restored = await rows.count();
+    expect(restored).toBeGreaterThanOrEqual(base);
   });
 });
