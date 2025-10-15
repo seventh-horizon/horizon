@@ -20,3 +20,12 @@ dump_*.tar.gz
 .seventh_horizon/runs/
 dump_*.tar.gz
 public/field/timeline/epoch_*.json
+# local and build noise
+.venv/
+.dump_tmp_epoch_*/
+tools/__pycache__/
+tests/__pycache__/
+public/sw.js
+scripts/dump-latest
+scripts/snapshot
+scripts/validate
