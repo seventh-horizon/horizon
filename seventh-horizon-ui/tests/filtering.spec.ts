@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('Filtering', () => {
-  test('typing in "Search all columns" reduces visible rows', async ({ page }) => {
+  test('global search input filters the table', async ({ page }) => {
     // App is expected to be running on the default Vite port during e2e
     await page.goto('http://localhost:5173/');
 
@@ -22,15 +22,35 @@ test.describe('Filtering', () => {
       test.skip(true, 'No rows loaded; skipping filtering behavior check.');
     }
 
-    // Type a common token that should narrow results (adjust if your dataset differs)
+    // 1) Type a common token that should narrow results (dataset-dependent)
     await search.fill('run_');
-    await page.waitForTimeout(300); // allow UI debounce / filtering to settle
 
+    // Wait a moment for debounce / UI to settle; then sample count
+    await page.waitForTimeout(300);
     const filteredCount = await rows.count();
 
-    // The filter should not increase the number of visible rows
+    // Filtering should never increase visible rows
     expect(filteredCount).toBeLessThanOrEqual(initialCount);
-    // And should ideally reduce them for typical datasets
-    expect(filteredCount).toBeLessThan(initialCount);
+
+    // Only demand a strict reduction if we started with 2+ rows.
+    if (initialCount >= 2) {
+      expect(filteredCount).toBeLessThan(initialCount);
+    }
+
+    // 2) Clear the search and ensure the count rebounds (best-effort)
+    await search.clear();
+    await page.waitForTimeout(200);
+    const reboundCount = await rows.count();
+    expect(reboundCount).toBeGreaterThanOrEqual(filteredCount);
+
+    // 3) Use a guaranteed no-match token to assert we can reach zero rows
+    const NO_MATCH = '__no_match_9f1e__';
+    await search.fill(NO_MATCH);
+    await page.waitForTimeout(200);
+    const noneCount = await rows.count();
+    expect(noneCount).toBe(0);
+
+    // Cleanup: clear search
+    await search.clear();
   });
 });
