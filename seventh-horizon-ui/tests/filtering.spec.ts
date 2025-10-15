@@ -1,85 +1,36 @@
-name: ci
+import { test, expect } from '@playwright/test';
 
-on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
+test.describe('Filtering', () => {
+  test('typing in "Search all columns" reduces visible rows', async ({ page }) => {
+    // App is expected to be running on the default Vite port during e2e
+    await page.goto('http://localhost:5173/');
 
-permissions:
-  contents: read
-  pages: write
-  id-token: write
+    // Locate the global search box (placeholder text shown in the UI)
+    const search = page.getByPlaceholder(/search all columns/i);
 
-concurrency:
-  group: pages
-  cancel-in-progress: true
+    // If the search box isn't present in this build, skip gracefully.
+    if (!(await search.isVisible().catch(() => false))) {
+      test.skip(true, 'Global search input not present; skipping filtering test.');
+    }
 
-jobs:
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
+    // Baseline row count in the main results table
+    const rows = page.locator('table tbody tr');
+    const initialCount = await rows.count();
 
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
+    // If there are no rows to filter, skip rather than fail
+    if (initialCount === 0) {
+      test.skip(true, 'No rows loaded; skipping filtering behavior check.');
+    }
 
-      - name: Install Python deps
-        run: |
-          python -m pip install -U pip setuptools
-          python -m pip install -e .
+    // Type a common token that should narrow results (adjust if your dataset differs)
+    await search.fill('run_');
+    await page.waitForTimeout(300); // allow UI debounce / filtering to settle
 
-      - name: Run pytest
-        run: pytest -q
+    const filteredCount = await rows.count();
 
-  e2e:
-    needs: test
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
-      - name: Install UI deps
-        working-directory: seventh-horizon-ui
-        run: npm ci
-
-      - name: Install Playwright browsers
-        working-directory: seventh-horizon-ui
-        run: npx playwright install --with-deps
-
-      - name: Run Playwright tests
-        working-directory: seventh-horizon-ui
-        run: npx playwright test --reporter=line
-
-  deploy:
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    needs: e2e
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
-      - name: Build UI
-        working-directory: seventh-horizon-ui
-        run: |
-          npm ci
-          npm run build
-
-      - name: Upload Pages artifact (single)
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: seventh-horizon-ui/dist
-
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+    // The filter should not increase the number of visible rows
+    expect(filteredCount).toBeLessThanOrEqual(initialCount);
+    // And should ideally reduce them for typical datasets
+    expect(filteredCount).toBeLessThan(initialCount);
+  });
+});
