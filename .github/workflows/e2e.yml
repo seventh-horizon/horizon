@@ -84,3 +84,31 @@ jobs:
         env:
           CI: "true"
         run: npx playwright test
+
+  deploy:
+    needs: e2e
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Build UI
+        working-directory: seventh-horizon-ui
+        run: |
+          npm ci
+          npm run build
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: seventh-horizon-ui/dist
+
+      - name: Deploy to GitHub Pages
+        uses: actions/deploy-pages@v4
