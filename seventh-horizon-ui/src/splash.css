@@ -1,0 +1,20 @@
+#veil-splash{
+  position:fixed; inset:0; z-index:9999; display:flex; align-items:center; justify-content:center;
+  background:#0a0812;
+  background-image:
+    radial-gradient(1200px 500px at 50% 80%, rgba(176,108,255,.20), transparent 65%),
+    radial-gradient(800px 320px at 50% 100%, rgba(255,120,248,.12), transparent 70%),
+    linear-gradient(180deg, #0a0812 0%, #0b0914 40%, #0e0a18 100%);
+  color:#e8e3ff; transition: opacity .4s ease, visibility .4s ease;
+}
+#veil-splash.hidden{ opacity:0; visibility:hidden; }
+#veil-logo{ display:flex; gap:14px; align-items:center; padding:16px 20px; border-radius:16px;
+  background: rgba(20,17,37,.6); backdrop-filter: blur(6px);
+  box-shadow: 0 18px 48px rgba(176,108,255,.18), 0 8px 20px rgba(0,0,0,.35);
+}
+#veil-dot{ width:18px; height:18px; border-radius:50%;
+  background: radial-gradient(circle at 30% 30%, #ff78f8, #b06cff);
+  animation: pulse 1.2s ease-in-out infinite;
+}
+#veil-text{ font: 600 14px/1.2 system-ui, -apple-system, Segoe UI, Roboto, sans-serif; letter-spacing:.4px; }
+@keyframes pulse{ 0%,100%{ transform: scale(.9) } 50%{ transform: scale(1.05) } }

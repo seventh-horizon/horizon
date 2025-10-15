@@ -14,3 +14,10 @@ elif anyof("workflow_dispatch:","uses: actions/checkout","on: push","jobs:"): ta
 elif anyof("Next.js","page.tsx","app/observer","timeline","public/field"): target="app/observer"
 elif anyof("phi_matrix","kappa","plot_field.py","compute_field.py","make_snapshot.py"): target="tools"
 print(json.dumps({"mode":"heuristic","target":target}))
+
+
+def main():
+    import sys; print('dump_classifier main placeholder')
+
+if __name__=='__main__':
+    main()

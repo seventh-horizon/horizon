@@ -1,0 +1,2 @@
+/* App-level styles (safe baseline) */
+.loading-bar{position:fixed;left:0;bottom:0;height:3px;background:var(--brand);box-shadow:0 0 12px var(--brand-glow);transition:width .2s ease;z-index:1000}

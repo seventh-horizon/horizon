@@ -1,0 +1,73 @@
+/* ===== Seventh Horizon — SIGNAL ROSE THEME (stable) ===== */
+:root[data-theme="rose"]{
+  --bg-0:#0b0910; --bg-1:#15101b; --bg-2:#1e1726;
+  --fg-0:#ffeef6; --fg-1:#f5bcd4;
+  --brand:#ff5fa2; --brand-2:#ffd1e8;
+  --ok:#7df7c7; --warn:#ffce6e; --err:#ff5a7a; --ring: rgba(255,95,162,.35);
+  --shadow-1: 0 2px 6px color-mix(in oklab, var(--brand) 15%, black);
+  --shadow-2: 0 6px 18px color-mix(in oklab, var(--brand) 25%, black);
+  --radius: 12px;
+}
+
+:root[data-theme="rose"] body{
+  background: var(--bg-0); color: var(--fg-0);
+  background-image:
+    radial-gradient(1100px 480px at 50% 82%, rgba(255,95,162,.18), transparent 65%),
+    radial-gradient(780px 320px at 50% 100%, rgba(255,209,232,.10), transparent 70%),
+    linear-gradient(180deg, #0b0910 0%, #0c0a12 42%, #100b17 100%);
+  background-attachment: fixed, fixed, fixed;
+}
+:root[data-theme="rose"] body::before{
+  content: ""; position: fixed; inset: -12%; pointer-events: none; z-index: 0;
+  background:
+    radial-gradient(36% 18% at 28% 72%, rgba(255,95,162,.06), transparent 60%),
+    radial-gradient(28% 16% at 66% 62%, rgba(255,209,232,.06), transparent 68%),
+    radial-gradient(20% 12% at 52% 84%, rgba(255,95,162,.05), transparent 72%);
+  mix-blend-mode: screen; opacity: .9; animation: rose-drift 24s linear infinite;
+}
+@media (prefers-reduced-motion: reduce){ :root[data-theme="rose"] body::before{ animation:none; } }
+@keyframes rose-drift{ 0%{transform:translate3d(-1.5%,0,0) scale(1.02);} 50%{transform:translate3d(1.5%,-1%,0) scale(1.03);} 100%{transform:translate3d(-1.5%,0,0) scale(1.02);} }
+
+:root[data-theme="rose"] header,
+:root[data-theme="rose"] .layout,
+:root[data-theme="rose"] .toolbar,
+:root[data-theme="rose"] .card,
+:root[data-theme="rose"] .table-wrap,
+:root[data-theme="rose"] footer.status{ position: relative; z-index:1; }
+
+:root[data-theme="rose"] .card{
+  background: linear-gradient(180deg,
+    color-mix(in oklab, var(--bg-1) 88%, var(--brand)) 0%,
+    color-mix(in oklab, var(--bg-2) 92%, transparent) 100%);
+  box-shadow: var(--shadow-1);
+  border: 1px solid color-mix(in oklab, var(--brand) 12%, transparent);
+}
+:root[data-theme="rose"] .toolbar{
+  background: color-mix(in oklab, var(--bg-2) 82%, transparent);
+  outline: 1px solid color-mix(in oklab, var(--brand) 18%, transparent);
+  box-shadow: var(--shadow-1);
+}
+:root[data-theme="rose"] .pill{
+  background: color-mix(in oklab, var(--brand) 26%, var(--bg-1));
+  border: 1px solid color-mix(in oklab, var(--brand) 40%, transparent);
+  color: var(--fg-0); text-shadow: 0 1px 2px rgba(0,0,0,.35); font-weight: 600;
+}
+:root[data-theme="rose"] thead th{ background: color-mix(in oklab, var(--bg-2) 86%, transparent); box-shadow: 0 1px 0 color-mix(in oklab, var(--fg-1) 12%, transparent); }
+:root[data-theme="rose"] tbody tr:nth-child(odd) td{ background: color-mix(in oklab, var(--bg-2) 42%, transparent); }
+:root[data-theme="rose"] tbody tr:hover td{ background: color-mix(in oklab, var(--brand) 16%, transparent); }
+
+:root[data-theme="rose"] button{
+  background: linear-gradient(180deg,
+    color-mix(in oklab, var(--brand) 45%, var(--bg-1)) 0%,
+    color-mix(in oklab, var(--brand) 25%, var(--bg-2)) 100%);
+  border: 1px solid color-mix(in oklab, var(--brand) 40%, transparent);
+  color: oklch(97% 0.03 340); text-shadow: 0 1px 2px rgba(0,0,0,.4); font-weight:600;
+  padding:10px 14px; border-radius:12px;
+}
+:root[data-theme="rose"] button:hover{
+  box-shadow: 0 0 14px color-mix(in oklab, var(--brand) 40%, black);
+  background: linear-gradient(180deg,
+    color-mix(in oklab, var(--brand) 55%, var(--bg-1)) 0%,
+    color-mix(in oklab, var(--brand) 35%, var(--bg-2)) 100%);
+}
+:root[data-theme="rose"] button:active{ transform: translateY(0) scale(.99); box-shadow: var(--shadow-1); }

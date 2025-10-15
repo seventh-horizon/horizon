@@ -1,197 +1,738 @@
 <!doctype html>
-<meta charset="utf-8">
-<title>Seventh Horizon — Latest Telemetry</title>
+<meta charset="utf-8" />
+<title>Seventh Horizon — Signal Rose Telemetry</title>
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+
+<!-- nicer favicon (inline SVG) -->
+<link rel="icon" href="data:image/svg+xml,\
+%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect rx='14' width='64' height='64' fill='%2313161c'/%3E%3Ccircle cx='32' cy='32' r='20' fill='%23ff3b8d'/%3E%3Cpath d='M18 34h28M18 26h18M18 42h24' stroke='white' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E">
+
 <style>
-  :root { font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
-  body { margin: 24px; }
-  header { display:flex; gap:12px; align-items:center; margin-bottom:16px; flex-wrap: wrap; }
-  h1 { font-size:18px; margin:0; }
-  .pill { font-size:12px; padding:4px 8px; border:1px solid #ddd; border-radius:999px; }
-  #sparkline { width: 640px; height: 120px; border:1px solid #eee; margin:12px 0; }
-  table { border-collapse: collapse; width: 100%; font-size: 13px; }
-  th, td { border-bottom: 1px solid #eee; padding: 6px 8px; text-align: left; }
-  tfoot td { font-weight: 600; }
-  .muted { color:#777; }
-  .row { display:flex; gap:12px; align-items:center; margin: 4px 0 8px; flex-wrap: wrap; }
-  input[type=text] { width: 520px; max-width: 100%; padding:6px 8px; }
-  button { padding:6px 10px; cursor:pointer; }
-  .stats { display:flex; gap:16px; margin:8px 0 4px; font-size:13px; flex-wrap: wrap; }
-  pre { background:#fafafa; border:1px solid #eee; padding:8px; overflow:auto; max-height:240px; }
+  /* ===== SIGNAL ROSE THEME (light/dark aware but bias dark) ===== */
+  :root {
+    --bg-0:#fbf7fb;      /* page (light) */
+    --bg-1:#ffffff;      /* card (light) */
+    --bg-2:#f4eef5;      /* soft surface (light) */
+    --fg-0:#0e1116;      /* text (light) */
+    --fg-1:#505665;      /* secondary (light) */
+    --brand:#ff3b8d;     /* Signal Rose accent */
+    --brand-2:#fbc4ff;   /* secondary accent */
+    --ok:#1aa46c; --warn:#c88a1b; --err:#d44b4b;
+    --ring: rgba(255, 59, 141, .35);
+    --shadow-1: 0 6px 18px rgba(17, 24, 39, .06), 0 2px 6px rgba(17, 24, 39, .04);
+    --shadow-2: 0 12px 32px rgba(17, 24, 39, .10), 0 4px 12px rgba(17, 24, 39, .06);
+    --radius: 14px;
+    --sidebar-w: 280px;
+  }
+  .dark {
+    --bg-0:#0b0a10;      /* page (dark) */
+    --bg-1:#121320;      /* card (dark) */
+    --bg-2:#0f101a;      /* soft surface (dark) */
+    --fg-0:#e9edf5;      /* text (dark) */
+    --fg-1:#a7b0c0;      /* secondary (dark) */
+    --brand:#ff3b8d;     /* Signal Rose accent */
+    --brand-2:#fbc4ff;
+    --ok:#37d39d; --warn:#f0c056; --err:#ff6666;
+    --ring: rgba(255, 59, 141, .35);
+    --shadow-1: 0 10px 28px rgba(0,0,0,.35), 0 3px 10px rgba(0,0,0,.25);
+    --shadow-2: 0 18px 48px rgba(0,0,0,.45), 0 8px 20px rgba(0,0,0,.35);
+  }
+
+  html, body { height:100%; margin:0; background:var(--bg-0); color:var(--fg-0);
+    font: 15px/1.45 ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
+  * { box-sizing: border-box; }
+
+  header { display:flex; gap:12px; align-items:center; padding:18px 18px 10px; position: sticky; top: 0;
+    background: color-mix(in oklab, var(--bg-0) 92%, transparent); backdrop-filter: blur(6px); z-index: 20; }
+  h1 { font-size:18px; margin:0; letter-spacing:.2px; }
+  .pill { font-size:12px; padding:4px 8px; border-radius:999px; background: color-mix(in oklab, var(--brand) 13%, var(--bg-1)); box-shadow: var(--shadow-1); }
+  .muted { color:var(--fg-1); }
+
+  /* Layout: sidebar + main */
+  .layout { display:grid; grid-template-columns: var(--sidebar-w) 1fr; gap:16px; padding:0 18px 18px; }
+  .sidebar { position: sticky; top: 64px; align-self: start; display:flex; flex-direction:column; gap:12px; }
+  .card { background: var(--bg-1); border-radius: var(--radius); box-shadow: var(--shadow-1); }
+  .card .card-body { padding: 12px; }
+  .section-title { font-weight:600; font-size:13px; padding: 10px 12px; border-bottom: 1px solid color-mix(in oklab, var(--fg-1) 15%, transparent); }
+
+  /* Toolbar (glassy) */
+  .toolbar { display:flex; flex-wrap:wrap; gap:10px; align-items:center; padding:10px 12px; border-radius: var(--radius);
+    background: color-mix(in oklab, var(--bg-1) 75%, transparent); backdrop-filter: blur(10px);
+    outline: 1px solid color-mix(in oklab, var(--brand) 12%, transparent); position: sticky; top: 64px; z-index: 10; }
+
+  button, input, select { font: inherit; }
+  input[type=text], input[type=number], select {
+    padding:6px 8px; border-radius: 10px; border:1px solid color-mix(in oklab, var(--fg-1) 15%, transparent);
+    background: var(--bg-1); color: var(--fg-0); transition: box-shadow .2s, border-color .2s;
+  }
+  input:focus, select:focus { outline: none; border-color: var(--brand); box-shadow: 0 0 0 4px var(--ring); }
+  button {
+    padding:6px 10px; border-radius:12px; border:1px solid color-mix(in oklab, var(--brand) 25%, transparent);
+    background: linear-gradient(180deg, color-mix(in oklab, var(--brand) 20%, var(--bg-1)) 0%, var(--bg-1) 90%); color: var(--fg-0);
+    box-shadow: var(--shadow-1); transition: transform .06s, box-shadow .2s, border-color .2s; cursor:pointer;
+  }
+  button:hover { transform: translateY(-1px); box-shadow: var(--shadow-2); }
+  button:active { transform: translateY(0); box-shadow: var(--shadow-1); }
+  button:focus { outline:none; box-shadow: 0 0 0 4px var(--ring), var(--shadow-1); }
+
+  /* Table */
+  .table-wrap { max-height: 56vh; overflow: auto; border-radius: var(--radius); background: var(--bg-1); box-shadow: var(--shadow-1); }
+  table { border-collapse: separate; border-spacing: 0; width:100%; font-size: 13px; }
+  th, td { padding: 8px 10px; text-align: left; }
+  thead th {
+    position: sticky; top: 0; background: color-mix(in oklab, var(--bg-1) 90%, transparent); backdrop-filter: blur(4px);
+    font-weight:600; box-shadow: 0 1px 0 color-mix(in oklab, var(--fg-1) 12%, transparent);
+  }
+  tbody tr:nth-child(odd) td { background: color-mix(in oklab, var(--bg-2) 40%, transparent); }
+  tbody tr:hover td { background: color-mix(in oklab, var(--brand) 10%, transparent); }
+  th.sortable { cursor: pointer; user-select: none; }
+
+  /* Chips + inline metrics */
+  .chip { display:inline-flex; align-items:center; gap:6px; padding:4px 8px; border-radius:999px; background: color-mix(in oklab, var(--brand) 12%, var(--bg-1)); box-shadow: inset 0 1px 0 rgba(255,255,255,.04); }
+  .chip .cnt { opacity:.8; font-weight:600; }
+  .chip .spark { width:56px; height:16px; display:inline-block; }
+  .chip.off { opacity:.55; }
+  .chips { display:flex; flex-wrap:wrap; gap:8px; }
+
+  /* Facets/minis */
+  .facets { display:flex; flex-wrap:wrap; gap:8px; }
+  .facet { display:inline-flex; align-items:center; gap:6px; padding:4px 8px; border-radius:999px; background: color-mix(in oklab, var(--brand) 10%, var(--bg-1)); }
+  .facet .cnt { opacity:.7; }
+
+  /* Runs list */
+  .runs { max-height: 220px; overflow:auto; }
+  .runitem { display:flex; justify-content:space-between; gap:8px; padding:8px 10px; border-bottom: 1px solid color-mix(in oklab, var(--fg-1) 15%, transparent); }
+  .runitem:last-child { border-bottom: none; }
+
+  /* Status / banners */
+  .banner { margin:12px 0; padding: 12px 14px; border-radius: var(--radius); box-shadow: var(--shadow-1); }
+  .banner.ok   { background: color-mix(in oklab, var(--ok) 12%, var(--bg-1)); }
+  .banner.warn { background: color-mix(in oklab, var(--warn) 14%, var(--bg-1)); }
+  .banner.err  { background: color-mix(in oklab, var(--err)  12%, var(--bg-1)); }
+  .banner .title { font-weight:700; margin-right:6px; }
+
+  footer.status { position: sticky; bottom: 0; margin-top:12px; padding:8px 10px; background: color-mix(in oklab, var(--bg-1) 85%, transparent);
+    border-radius: var(--radius); box-shadow: var(--shadow-1); display:flex; gap:12px; align-items:center; }
+
+  /* Command Palette */
+  .palette-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.35); backdrop-filter: blur(2px); display:none; z-index: 100; }
+  .palette { position: absolute; top: 10vh; left: 50%; transform: translateX(-50%); width: min(720px, 92vw);
+    background: var(--bg-1); border-radius: 16px; box-shadow: var(--shadow-2); overflow: hidden; }
+  .palette .head { padding:10px 12px; display:flex; gap:8px; align-items:center; border-bottom: 1px solid color-mix(in oklab, var(--fg-1) 15%, transparent); }
+  .palette input { flex:1; }
+  .palette .list { max-height: 50vh; overflow:auto; }
+  .palette .item { padding:10px 12px; display:flex; justify-content:space-between; gap:12px; cursor:pointer; }
+  .palette .item:hover, .palette .item.active { background: color-mix(in oklab, var(--brand) 12%, var(--bg-1)); }
+
+  /* Compact / Simple */
+  body.compact input, body.compact button, body.compact select { padding: 4px 7px; }
+  body.compact th, body.compact td { padding: 5px 7px; }
+  body.simple .advanced { display:none !important; }
+
+  /* Motion prefs */
+  *, *::before, *::after { transition: background-color .2s, color .2s, border-color .2s; }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; } }
 </style>
 
 <header>
-  <h1>Seventh Horizon — Latest Telemetry</h1>
-  <span class="pill" id="runId">run: …</span>
+  <h1>Seventh Horizon — Telemetry</h1>
+  <span class="pill" id="runId">run: —</span>
   <span class="pill" id="rows">rows: 0</span>
-  <span class="pill" id="timeRange">range: …</span>
+  <span class="pill" id="timeRange">range: —</span>
 </header>
 
-<div class="row">
-  <label class="muted">CSV path:</label>
-  <input id="csvPath" type="text" value="../.seventh_horizon/runs/latest/telemetry.csv">
-  <button id="reload">Reload</button>
-  <label style="margin-left:8px;"><input id="auto" type="checkbox"> Auto-refresh</label>
+<div style="padding:0 18px">
+  <div id="validator" class="banner warn" hidden>
+    <span class="title">CSV Validator</span>
+    <span id="validatorMsg"></span>
+    <button id="applyFix" style="margin-left:8px">Apply fixes</button>
+  </div>
 </div>
 
-<canvas id="sparkline" width="640" height="120"></canvas>
-<div class="stats">
-  <div><strong>Last Tags:</strong> <span id="lastTags" class="muted">—</span></div>
-  <div><strong>Last Git:</strong> <span id="lastGit" class="muted">—</span></div>
-  <div><strong>Python:</strong> <span id="pyVer" class="muted">—</span></div>
+<div class="layout">
+  <!-- ===== Left Sidebar ===== -->
+  <aside class="sidebar">
+    <div class="card">
+      <div class="section-title">Presets</div>
+      <div class="card-body" style="display:flex; flex-direction:column; gap:8px">
+        <select id="presetSel"><option value="">(none)</option></select>
+        <div style="display:flex; flex-wrap:wrap; gap:8px">
+          <button id="presetLoad">⭐ Load</button>
+          <button id="presetSave" title="s">💾 Save as…</button>
+          <button id="presetStar" title="p">★ Overwrite</button>
+          <button id="presetDel">🗑 Delete</button>
+          <button id="copyShare">🔗 Copy link</button>
+          <button id="applyHash">🔎 From URL</button>
+        </div>
+        <label class="inline" style="display:flex; gap:8px; align-items:center">
+          <input id="pinRun" type="checkbox"> Pin current run in share/export
+        </label>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-title">Runs</div>
+      <div class="card-body">
+        <div class="runs" id="runsBox"><div class="muted">Click “Scan runs”.</div></div>
+        <div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:8px">
+          <button id="scanRuns">🔎 Scan runs</button>
+          <button id="pinLatest">📌 Pin latest</button>
+          <button id="unpinRun">📍 Unpin</button>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ===== Main ===== -->
+  <main style="display:flex; flex-direction:column; gap:12px">
+    <div class="toolbar" role="region" aria-label="Primary controls">
+      <button id="openPalette" title="⌘K">⌨️ Palette</button>
+      <label class="inline">CSV:
+        <input id="csvPath" type="text" value="../.seventh_horizon/runs/latest/telemetry.csv" style="width:360px" aria-label="CSV path">
+      </label>
+      <button id="reload" title="r">⟳ Reload</button>
+      <label class="inline"><input id="auto" type="checkbox"> Auto</label>
+      <label class="inline">s:<input id="intervalSec" type="number" min="1" max="60" value="5" style="width:70px"></label>
+      <button id="pause" title="space">⏯ Pause</button>
+
+      <span class="muted">Window:</span>
+      <button class="tw" data-win="300" title="1">5m</button>
+      <button class="tw" data-win="3600" title="2">1h</button>
+      <button class="tw" data-win="86400" title="3">24h</button>
+      <button class="tw" data-win="" title="0">All</button>
+      <label class="inline">Custom:<input id="customWinMin" type="number" min="1" placeholder="min" style="width:80px"></label>
+      <button id="applyCustomWin">Set</button>
+
+      <label class="inline">Tag:<input id="tagFilter" type="text" list="tagList" placeholder="substring or regex" style="width:240px"></label>
+      <datalist id="tagList"></datalist>
+      <label class="inline"><input id="useRegex" type="checkbox"> Regex</label>
+      <button id="clearFilter">🧹 Clear</button>
+
+      <label class="inline"><input id="showLocal" type="checkbox"> Local</label>
+      <label class="inline"><input id="darkMode" type="checkbox"> Dark</label>
+      <label class="inline"><input id="compactMode" type="checkbox"> Compact</label>
+      <label class="inline"><input id="simpleMode" type="checkbox"> Simple</label>
+
+      <button id="dlLatest">⬇︎ Latest</button>
+    </div>
+
+    <div class="card">
+      <div class="section-title">Activity</div>
+      <div class="card-body">
+        <canvas id="sparkline" width="640" height="120" aria-label="Sparkline"></canvas>
+        <div style="display:flex; gap:16px; flex-wrap:wrap; margin:6px 0 10px">
+          <div><strong>Last Tags:</strong> <span id="lastTags" class="muted">—</span></div>
+          <div><strong>Last Git:</strong> <span id="lastGit" class="muted">—</span></div>
+          <div><strong>Python:</strong> <span id="pyVer" class="muted">—</span></div>
+        </div>
+        <canvas id="hist" width="640" height="120" aria-label="Histogram"></canvas>
+        <div class="muted">Histogram of time between consecutive rows (seconds). Uses the <em>filtered</em> table.</div>
+      </div>
+    </div>
+
+    <div class="card advanced">
+      <div class="section-title">Facets & Token minis</div>
+      <div class="card-body">
+        <div class="facets" id="facets"></div>
+        <div id="minis" class="chips"></div>
+      </div>
+    </div>
+
+    <div class="card advanced">
+      <div class="section-title">Groups (OR inside, AND between)</div>
+      <div class="card-body">
+        <div class="chips" id="groups"></div>
+        <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:8px">
+          <select id="keySelect"><option value="">(keys will load)</option></select>
+          <input id="valInput" type="text" placeholder="value" style="width:160px" />
+          <button id="addToCurrent" title="g">➕ Add to current</button>
+          <button id="newGroup">🧩 New group</button>
+          <button id="clearGroups">🗑 Clear groups</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card advanced">
+      <div class="section-title">Columns</div>
+      <div class="card-body" id="colCtl"></div>
+    </div>
+
+    <div class="table-wrap"><table id="tbl">
+      <thead><tr id="theadRow"></tr></thead>
+      <tbody></tbody>
+      <tfoot><tr><td id="tfootCell" colspan="8" class="muted">
+        <button id="downloadCSV">⬇︎ CSV</button>
+        <button id="copyTSV">📋 Copy</button>
+        <button id="downloadPNG">🖼 PNG</button>
+        <button id="exportJSON">📦 Export JSON</button>
+        <label class="inline">
+          <input id="importJSONInput" type="file" accept="application/json" hidden>
+          <button id="importJSONBtn">📥 Import JSON</button>
+        </label>
+        <button id="loadMeta">🧾 metadata.env</button>
+      </td></tr></tfoot>
+    </table></div>
+
+    <pre id="metaBox" class="card card-body muted" hidden style="white-space:pre-wrap">—</pre>
+
+    <div class="card advanced">
+      <div class="section-title">Adopt a CSV</div>
+      <div class="card-body">
+        <div id="drop" style="border:2px dashed color-mix(in oklab, var(--fg-1) 25%, transparent); border-radius:12px; padding:12px; text-align:center">
+          Drag & drop a CSV here to preview / adopt
+        </div>
+      </div>
+    </div>
+
+    <footer class="status" aria-live="polite">
+      <span id="statusRun">run: —</span>
+      <span id="statusRows">rows: 0</span>
+      <span id="statusRange">range: —</span>
+    </footer>
+  </main>
 </div>
 
-<div class="row">
-  <button id="loadMeta">Load metadata.env</button>
-  <span class="muted">Shows metadata for the currently loaded run.</span>
+<!-- Command Palette -->
+<div id="paletteWrap" class="palette-backdrop" aria-hidden="true">
+  <div class="palette" role="dialog" aria-modal="true" aria-label="Command Palette">
+    <div class="head">
+      <span>⌨️</span>
+      <input id="paletteInput" type="text" placeholder="Find tags, keys or runs…  (Try: mode=, phase=, run_...)" />
+      <button id="paletteClose">✖</button>
+    </div>
+    <div id="paletteList" class="list" role="listbox" aria-label="Results"></div>
+  </div>
 </div>
-<pre id="metaBox" class="muted" hidden>—</pre>
-
-<table id="tbl">
-  <thead>
-    <tr>
-      <th>RunID</th><th>UTC</th><th>Tags</th><th>CWD</th><th>GitBranch</th><th>GitCommit</th><th>Python</th>
-    </tr>
-  </thead>
-  <tbody></tbody>
-  <tfoot><tr><td colspan="7" class="muted">Loaded <span id="rowCount">0</span> rows</td></tr></tfoot>
-</table>
 
 <script>
-(async function () {
-  const byId = (id) => document.getElementById(id);
-  const csvPathEl = byId('csvPath');
-  const reloadBtn = byId('reload');
-  const auto = byId('auto');
-  const runIdEl = byId('runId');
-  const rowsEl = byId('rows');
-  const rangeEl = byId('timeRange');
-  const lastTagsEl = byId('lastTags');
-  const lastGitEl = byId('lastGit');
-  const pyVerEl = byId('pyVer');
-  const tbody = byId('tbl').querySelector('tbody');
-  const rowCount = byId('rowCount');
-  const canvas = byId('sparkline');
-  const ctx = canvas.getContext('2d');
-  const loadMetaBtn = byId('loadMeta');
-  const metaBox = byId('metaBox');
-  let timer = null;
+(async function(){
+  // ===== DOM shortcuts
+  const $ = (id)=>document.getElementById(id);
+  const runIdEl=$('runId'), rowsEl=$('rows'), rangeEl=$('timeRange');
+  const csvPathEl=$('csvPath'), reloadBtn=$('reload'), auto=$('auto'), intervalSecEl=$('intervalSec'), pauseBtn=$('pause');
+  const showLocal=$('showLocal'), darkMode=$('darkMode'), compactMode=$('compactMode'), simpleMode=$('simpleMode');
+  const spark=$('sparkline'), sctx=spark.getContext('2d'); const hist=$('hist'), hctx=hist.getContext('2d');
+  const tagFilter=$('tagFilter'), tagList=$('tagList'), useRegex=$('useRegex'), clearFilter=$('clearFilter');
+  const keySelect=$('keySelect'), valInput=$('valInput'), addToCurrent=$('addToCurrent'), newGroupBtn=$('newGroup'), clearGroupsBtn=$('clearGroups'), groupsEl=$('groups');
+  const facetsEl=$('facets'), minisEl=$('minis');
+  const table=$('tbl'), theadRow=$('theadRow'), tbody=table.querySelector('tbody'), tfootCell=$('tfootCell'), colCtl=$('colCtl');
+  const presetSel=$('presetSel'), presetLoad=$('presetLoad'), presetSave=$('presetSave'), presetStar=$('presetStar'), presetDel=$('presetDel');
+  const copyShare=$('copyShare'), applyHash=$('applyHash'), pinRun=$('pinRun');
+  const scanRuns=$('scanRuns'), runsBox=$('runsBox'), pinLatest=$('pinLatest'), unpinRun=$('unpinRun');
+  const twButtons=[...document.querySelectorAll('.tw')], customWinMin=$('customWinMin'), applyCustomWin=$('applyCustomWin');
+  const loadMetaBtn=$('loadMeta'), metaBox=$('metaBox'), downloadCSV=$('downloadCSV'), copyTSV=$('copyTSV'), downloadPNG=$('downloadPNG'), exportJSON=$('exportJSON'), importJSONBtn=$('importJSONBtn'), importJSONInput=$('importJSONInput'), dlLatest=$('dlLatest');
+  const statusRun=$('statusRun'), statusRows=$('statusRows'), statusRange=$('statusRange');
+  const validator=$('validator'), validatorMsg=$('validatorMsg'), applyFix=$('applyFix');
 
-  async function loadText(path) {
-    const res = await fetch(path);
-    if (!res.ok) throw new Error(`Fetch failed: ${res.status} ${res.statusText}`);
-    return await res.text();
+  // Command palette
+  const paletteWrap=$('paletteWrap'), paletteInput=$('paletteInput'), paletteList=$('paletteList'), paletteClose=$('paletteClose'), openPaletteBtn=$('openPalette');
+
+  // ===== State
+  let header=[], rows=[], filtered=[], lastRunId=null, timer=null, paused=false;
+  let timeWindowSec=null, customWindowMin=null;
+  let groups=[{on:true, items:[]}], currentGroup=0;
+  let columns=[
+    { key:'RunID', label:'RunID', show:true },
+    { key:'UTC', label:'UTC', show:true },
+    { key:'Local', label:'Local', show:false }, // virtual
+    { key:'Tags', label:'Tags', show:true },
+    { key:'CWD', label:'CWD', show:true },
+    { key:'GitBranch', label:'GitBranch', show:true },
+    { key:'GitCommit', label:'GitCommit', show:true },
+    { key:'Python', label:'Python', show:true },
+  ];
+  let sortKey=null, sortDir=1;
+
+  // Theme & prefs
+  function applyTheme(){ document.documentElement.classList.toggle('dark', darkMode.checked); document.body.classList.toggle('compact', compactMode.checked); document.body.classList.toggle('simple', simpleMode.checked); }
+  function savePrefs(){
+    const p={csvPath:csvPathEl.value, tag:tagFilter.value, useRegex:useRegex.checked, auto:auto.checked, interval:intervalSecEl.value, paused, showLocal:showLocal.checked, dark:darkMode.checked, compact:compactMode.checked, simple:simpleMode.checked, groups, cur:currentGroup, pin:pinRun.checked, twin:timeWindowSec, twinC:customWindowMin, columns, sortKey, sortDir};
+    localStorage.setItem('hz.prefs', JSON.stringify(p));
+  }
+  function loadPrefs(){
+    try{
+      const p=JSON.parse(localStorage.getItem('hz.prefs')||'{}');
+      if(p.csvPath) csvPathEl.value=p.csvPath;
+      tagFilter.value=p.tag||''; useRegex.checked=!!p.useRegex;
+      auto.checked=!!p.auto; intervalSecEl.value=p.interval||'5';
+      paused=!!p.paused; pauseBtn.textContent=paused?'Resume':'Pause';
+      showLocal.checked=!!p.showLocal; darkMode.checked=!!p.dark; compactMode.checked=!!p.compact; simpleMode.checked=!!p.simple; applyTheme();
+      groups=Array.isArray(p.groups)&&p.groups.length?p.groups:groups; currentGroup=Number.isInteger(p.cur)?p.cur:0;
+      pinRun.checked=!!p.pin; timeWindowSec=(p.twin==null?null:Number(p.twin)); customWindowMin=(p.twinC==null?null:Number(p.twinC)); if(customWindowMin!=null) customWinMin.value=String(customWindowMin);
+      if(Array.isArray(p.columns)&&p.columns.length) columns=p.columns;
+      sortKey=p.sortKey||null; sortDir=(p.sortDir==null?1:Number(p.sortDir));
+    }catch{}
   }
 
-  async function loadCSV(path) {
-    const res = await fetch(path);
-    if (!res.ok) throw new Error(`Fetch failed: ${res.status} ${res.statusText}`);
-    const text = await res.text();
-    const lines = text.trim().split(/\r?\n/);
-    const header = lines.shift().split(',').map(s => s.trim());
-    const rows = lines.map(line => line.split(','));
-    return { header, rows };
+  // CSV IO + schema aliasing
+  async function loadText(path){ const r=await fetch(path,{cache:'no-store'}); if(!r.ok) throw new Error(`Fetch failed: ${r.status} ${r.statusText}`); return r.text(); }
+  async function loadCSV(path){
+    const txt=(await loadText(path)).trim(); if(!txt) return {header:[], rows:[]};
+    const lines=txt.split(/\r?\n/).filter(Boolean);
+    let hdr=lines.shift().split(',').map(s=>s.trim());
+    let data=lines.map(l=>l.split(','));
+    const {header:canon, indexMap, issues} = aliasMap(hdr);
+    hdr=canon; data = data.map(row => canon.map((_,i)=> row[indexMap[i]] ?? ''));
+    return { header: hdr, rows: data, issues };
+  }
+  function aliasMap(hdr){
+    const aliases = { 'UTC':['utc','timestamp','time','datetime','ts','date','created_at'], 'RunID':['runid','run_id','id','run','session'], 'Tags':['tags','label','labels','kv','meta','metadata'], 'CWD':['cwd','cwd_path','workdir','working_dir','pwd','path'], 'GitBranch':['gitbranch','branch'], 'GitCommit':['gitcommit','commit','sha','git_sha'], 'Python':['python','python_version','py','runtime'] };
+    const canonical = ['RunID','UTC','Tags','CWD','GitBranch','GitCommit','Python'];
+    const lower = hdr.map(h=>h.toLowerCase());
+    const findIdx=(names)=>{ for(const n of names){ const i=lower.indexOf(n.toLowerCase()); if(i!==-1) return i; } return -1; };
+    const chosen={}; canonical.forEach(c=> chosen[c]=findIdx([c, ...(aliases[c]||[])]));
+    const issues=[];
+    canonical.forEach(c=>{ if(chosen[c]===-1) issues.push(`Missing "${c}" (will synthesize empty column)`); });
+    // Build index map: if missing, map to a safe dummy column index (-1 handled at read)
+    const idxMap=canonical.map((c,i)=> chosen[c]===-1 ? -1 : chosen[c]);
+    return { header: canonical, indexMap: idxMap, issues };
   }
 
-  function drawSpark(dates) {
-    const n = dates.length;
-    ctx.clearRect(0,0,canvas.width, canvas.height);
-    if (n < 2) return;
-    const diffs = [0];
-    for (let i=1;i<n;i++) {
-      const t0 = Date.parse(dates[i-1]); const t1 = Date.parse(dates[i]);
-      const dt = Math.max(0, (t1 - t0)/1000);
-      diffs.push(dt);
+  // CSV Validator banner
+  function showValidator(issues){
+    if(!issues || !issues.length){ validator.hidden=true; return; }
+    validatorMsg.textContent = issues.join('; ');
+    validator.hidden=false;
+  }
+  applyFix.addEventListener('click', ()=>{
+    // Our aliasMap already canonicalizes; “fix” here toggles a strong warning off and re-applies filter
+    validator.hidden=true; applyFilter();
+  });
+
+  // Suggestions / keys
+  function buildTagSuggestionsAndKeys(rows, idxTags){
+    const suggest=new Set(), keys=new Set(); const KV=/\b([A-Za-z0-9_.-]+)=([^,\|; ]+)/g;
+    for(const r of rows){
+      const raw=(r[idxTags]||'').trim(); if(!raw) continue;
+      suggest.add(raw);
+      const toks=raw.split(/[,\|; ]+/).map(s=>s.trim()).filter(Boolean);
+      for(const t of toks) if(t.length>=2) suggest.add(t);
+      let m; while((m=KV.exec(raw))!==null) keys.add(m[1]);
     }
-    const w = canvas.width, h = canvas.height, pad=8;
-    const xStep = (w - 2*pad) / (n-1);
-    const maxY = Math.max(...diffs) || 1;
-    ctx.beginPath();
-    for (let i=0;i<n;i++) {
-      const x = pad + i*xStep;
-      const y = h - pad - (diffs[i]/maxY)*(h-2*pad);
-      if (i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+    tagList.innerHTML=''; let c=0; for(const v of suggest){ if(c++>200) break; const o=document.createElement('option'); o.value=v; tagList.appendChild(o); }
+    keySelect.innerHTML=''; const sorted=[...keys].sort((a,b)=>a.localeCompare(b)); if(!sorted.length){ ['mode','phase','task'].forEach(k=>sorted.push(k)); }
+    for(const k of sorted){ const opt=document.createElement('option'); opt.value=k; opt.textContent=k; keySelect.appendChild(opt); }
+  }
+
+  // Charts
+  function drawSpark(dates){
+    const ctx=sctx, w=spark.width,h=spark.height,pad=8;
+    ctx.clearRect(0,0,w,h); if(dates.length<2) return;
+    const diffs=[0]; for(let i=1;i<dates.length;i++){ const d=(Date.parse(dates[i])-Date.parse(dates[i-1]))/1000; diffs.push(Math.max(0,d)); }
+    const maxY=Math.max(...diffs)||1, xStep=(w-2*pad)/(dates.length-1);
+    ctx.beginPath(); for(let i=0;i<dates.length;i++){ const x=pad+i*xStep, y=h-pad-(diffs[i]/maxY)*(h-2*pad); i?ctx.lineTo(x,y):ctx.moveTo(x,y); } ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(pad,h-pad); ctx.lineTo(w-pad,h-pad); ctx.stroke();
+  }
+  function drawHistogram(dates,bins=20){
+    const ctx=hctx, w=hist.width,h=hist.height,pad=8;
+    ctx.clearRect(0,0,w,h); if(dates.length<2) return;
+    const diffs=[]; for(let i=1;i<dates.length;i++){ const d=(Date.parse(dates[i])-Date.parse(dates[i-1]))/1000; diffs.push(Math.max(0,d)); }
+    const max=Math.max(...diffs)||1, barW=(w-2*pad)/bins, counts=new Array(bins).fill(0);
+    diffs.forEach(d=> counts[Math.floor(d/max*(bins-1))]++);
+    const maxC=Math.max(...counts)||1;
+    for(let i=0;i<bins;i++){ const x=pad+i*barW, bH=(counts[i]/maxC)*(h-2*pad), y=h-pad-bH; ctx.fillRect(x,y,barW-1,bH); }
+    ctx.beginPath(); ctx.moveTo(pad,h-pad); ctx.lineTo(w-pad,h-pad); ctx.stroke();
+  }
+  function fmtRange(dates){
+    if(!dates.length) return '—';
+    const f=new Date(dates[0]); const l=new Date(dates[dates.length-1]);
+    const utc=f.toISOString().replace('T',' ').slice(0,19)+' → '+l.toISOString().replace('T',' ').slice(0,19);
+    return showLocal.checked?`UTC ${utc} (local ${f.toLocaleString()} → ${l.toLocaleString()})`:utc;
+  }
+
+  // Filters
+  function withinWindow(iso){ if(timeWindowSec==null) return true; const t=Date.parse(iso); return !isNaN(t) && (Date.now()-t)/1000 <= timeWindowSec; }
+  function textMatches(str,q){ if(!q) return true; if(useRegex.checked){ try{ return new RegExp(q,'i').test(str);}catch{return false;} } return String(str).toLowerCase().includes(q.toLowerCase()); }
+  function rowMatches(r, idx){
+    const tagsStr=r[idx['Tags']]||''; const utcStr=r[idx['UTC']]||'';
+    if(!withinWindow(utcStr)) return false;
+    if(!textMatches(tagsStr,(tagFilter.value||'').trim())) return false;
+    for(const g of groups){ if(!g.on) continue; const enabled=(g.items||[]).filter(it=>it.on); if(!enabled.length) continue;
+      let hit=false; for(const it of enabled){ if(String(tagsStr).toLowerCase().includes(it.text.toLowerCase())){ hit=true; break; } }
+      if(!hit) return false;
     }
-    ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(pad, h-pad); ctx.lineTo(w-pad, h-pad); ctx.stroke();
+    return true;
+  }
+  function localFromUTC(iso){ const d=new Date(iso); return isNaN(d)?'—':d.toLocaleString(); }
+
+  // Columns
+  function visibleColumnKeys(){ return columns.filter(c=>c.show).map(c=>c.key); }
+  function renderHead(){
+    theadRow.innerHTML='';
+    for(const key of visibleColumnKeys()){
+      const th=document.createElement('th'); th.textContent=key; th.className='sortable'; th.tabIndex=0;
+      if(key===sortKey) th.textContent += sortDir===1?' ▲':' ▼';
+      th.addEventListener('click',()=>{ if(sortKey===key) sortDir=-sortDir; else {sortKey=key; sortDir=1;} savePrefs(); applyFilter(); });
+      th.addEventListener('keydown',(e)=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); th.click(); }});
+      theadRow.appendChild(th);
+    }
+    $('tfootCell').colSpan = visibleColumnKeys().length || 1;
+  }
+  function renderColumnControls(){
+    colCtl.innerHTML='<strong>Show/Order:</strong> ';
+    columns.forEach((c,i)=>{
+      const chip=document.createElement('span'); chip.className='chip';
+      const cb=document.createElement('input'); cb.type='checkbox'; cb.checked=c.show; cb.addEventListener('change',()=>{ c.show=cb.checked; savePrefs(); renderHead(); applyFilter(); });
+      const label=document.createElement('span'); label.textContent=c.label;
+      const up=document.createElement('button'); up.textContent='↑'; up.addEventListener('click',()=>{ if(i>0){ const t=columns[i]; columns.splice(i,1); columns.splice(i-1,0,t); savePrefs(); renderColumnControls(); renderHead(); applyFilter(); }});
+      const dn=document.createElement('button'); dn.textContent='↓'; dn.addEventListener('click',()=>{ if(i<columns.length-1){ const t=columns[i]; columns.splice(i,1); columns.splice(i+1,0,t); savePrefs(); renderColumnControls(); renderHead(); applyFilter(); }});
+      chip.append(cb,label,up,dn); colCtl.appendChild(chip);
+    });
   }
 
-  function fmtRange(dates) {
-    if (!dates.length) return '—';
-    const f = dates[0], l = dates[dates.length-1];
-    return new Date(f).toISOString().replace('T',' ').slice(0,19) + ' → ' +
-           new Date(l).toISOString().replace('T',' ').slice(0,19);
-  }
-
-  async function run(path) {
-    try {
-      const { header, rows } = await loadCSV(path);
-      tbody.innerHTML = '';
-      rows.forEach(r => {
-        const tr = document.createElement('tr');
-        r.forEach((cell) => {
-          const td = document.createElement('td');
-          td.textContent = cell;
-          tr.appendChild(td);
-        });
-        tbody.appendChild(tr);
-      });
-      rowCount.textContent = rows.length;
-      rowsEl.textContent = `rows: ${rows.length}`;
-
-      if (rows.length) {
-        const idx = Object.fromEntries(header.map((h,i)=>[h,i]));
-        const last = rows[rows.length-1];
-        const runId = last[idx['RunID']];
-        runIdEl.textContent = `run: ${runId}`;
-        lastTagsEl.textContent = last[idx['Tags']] || '—';
-        lastGitEl.textContent  = `${last[idx['GitBranch']]} @ ${last[idx['GitCommit']]}`;
-        pyVerEl.textContent    = last[idx['Python']] || '—';
-
-        const times = rows.map(r => r[idx['UTC']]);
-        rangeEl.textContent = `range: ${fmtRange(times)}`;
-        drawSpark(times);
-
-        if (!metaBox.hidden) {
-          const metaPath = `../.seventh_horizon/runs/${runId}/metadata.env`;
-          try { metaBox.textContent = await loadText(metaPath); } catch {}
-        }
-      } else {
-        runIdEl.textContent = 'run: —';
-        rangeEl.textContent = 'range: —';
-        lastTagsEl.textContent = '—';
-        lastGitEl.textContent = '—';
-        pyVerEl.textContent = '—';
-        ctx.clearRect(0,0,canvas.width,canvas.height);
+  // Table render
+  function renderTable(rowsToShow, idx){
+    tbody.innerHTML=''; const vis=visibleColumnKeys();
+    const frag=document.createDocumentFragment();
+    for(const r of rowsToShow){
+      const tr=document.createElement('tr'); tr.dataset.runid=r[idx['RunID']]||''; tr.dataset.utc=r[idx['UTC']]||'';
+      for(const key of vis){
+        let val=''; if(key==='Local') val=showLocal.checked?localFromUTC(r[idx['UTC']]):''; else val=r[idx[key]]??'';
+        const td=document.createElement('td'); td.textContent=val; tr.appendChild(td);
       }
-    } catch (e) {
-      alert('Error: ' + e.message + '\nPath: ' + path);
-      console.error(e);
+      frag.appendChild(tr);
     }
+    tbody.appendChild(frag);
+    rowsEl.textContent=`rows: ${rowsToShow.length}`; statusRows.textContent=rowsEl.textContent;
   }
 
-  reloadBtn.addEventListener('click', () => run(csvPathEl.value));
-  auto.addEventListener('change', () => {
-    if (auto.checked) {
-      timer = setInterval(() => run(csvPathEl.value), 5000);
-      run(csvPathEl.value);
+  // Facets + minis chips (with inline metrics + hover spark)
+  function buildFacets(rowsToShow, idx){
+    const counts=new Map(); const KV=/\b([A-Za-z0-9_.-]+)=([^,\|; ]+)/g;
+    for(const r of rowsToShow){ const raw=(r[idx['Tags']]||''); let m; while((m=KV.exec(raw))!==null){ const tok=`${m[1]}=${m[2]}`; counts.set(tok,(counts.get(tok)||0)+1); } }
+    const top=[...counts.entries()].sort((a,b)=>b[1]-a[1]).slice(0,20);
+    facetsEl.innerHTML=''; minisEl.innerHTML='';
+    const times=rowsToShow.map(r=>r[idx['UTC']]).map(t=>Date.parse(t)).filter(Number.isFinite);
+    const buck=(t)=>Math.floor(t/(60*1000))*60*1000;
+
+    // Precompute per-token series for hover sparks
+    const series = new Map(); for(const [tok] of top){ series.set(tok, new Map()); }
+    for(const r of rowsToShow){
+      const t = Date.parse(r[idx['UTC']]); if(!Number.isFinite(t)) continue; const btime=buck(t);
+      for(const [tok] of top){ if((r[idx['Tags']]||'').includes(tok)){ const m=series.get(tok); m.set(btime,(m.get(btime)||0)+1); } }
+    }
+
+    for(const [tok,cnt] of top){
+      const b=document.createElement('button'); b.className='facet'; b.innerHTML=`${tok} <span class="cnt">(${cnt})</span>`;
+      b.addEventListener('click',()=>{ ensureGroup(); const g=groups[currentGroup]; if(!g.items.find(ch=>ch.text.toLowerCase()===tok.toLowerCase())) g.items.push({text:tok,on:true}); renderGroups(); applyFilter(); });
+      facetsEl.appendChild(b);
+
+      // Mini metric chip with hover spark
+      const chip=document.createElement('span'); chip.className='chip';
+      chip.innerHTML=`<span>${tok}</span> <span class="cnt">${cnt}</span> <canvas class="spark" width="56" height="16" aria-hidden="true"></canvas>`;
+      const cvs=chip.querySelector('canvas'); chip.addEventListener('mouseenter',()=> drawMiniSpark(cvs, series.get(tok)));
+      chip.addEventListener('click',()=>{ ensureGroup(); const g=groups[currentGroup]; if(!g.items.find(ch=>ch.text.toLowerCase()===tok.toLowerCase())) g.items.push({text:tok,on:true}); renderGroups(); applyFilter(); });
+      minisEl.appendChild(chip);
+    }
+  }
+  function drawMiniSpark(canvas, map){
+    const ctx=canvas.getContext('2d'); const w=canvas.width,h=canvas.height; ctx.clearRect(0,0,w,h); if(!map || !map.size){ ctx.beginPath(); ctx.moveTo(0,h-2); ctx.lineTo(w,h-2); ctx.stroke(); return; }
+    const keys=[...map.keys()].sort((a,b)=>a-b); const vals=keys.map(k=>map.get(k)); const max=Math.max(...vals)||1;
+    ctx.beginPath(); keys.forEach((_,i)=>{ const x=i/(Math.max(1,keys.length-1))*(w-2)+1; const y=h-2 - (vals[i]/max)*(h-4); i?ctx.lineTo(x,y):ctx.moveTo(x,y); }); ctx.stroke();
+  }
+
+  // Groups render (as chips)
+  function ensureGroup(){ if(!groups.length) groups.push({on:true, items:[]}); if(currentGroup<0||currentGroup>=groups.length) currentGroup=groups.length-1; }
+  function renderGroups(){
+    groupsEl.innerHTML='';
+    groups.forEach((g,gi)=>{
+      const box=document.createElement('span'); box.className='chip'+(g.on?'':' off');
+      const title=document.createElement('strong'); title.textContent=`G${gi+1}`;
+      const toggle=document.createElement('button'); toggle.textContent=g.on?'On':'Off'; toggle.addEventListener('click',()=>{ g.on=!g.on; applyFilter(); renderGroups(); });
+      const set=document.createElement('button'); set.textContent=(gi===currentGroup)?'Current':'Make current'; set.addEventListener('click',()=>{ currentGroup=gi; savePrefs(); renderGroups(); });
+      const del=document.createElement('button'); del.textContent='×'; del.title='Remove group'; del.addEventListener('click',()=>{ groups.splice(gi,1); if(!groups.length) groups=[{on:true,items:[]}]; currentGroup=Math.max(0,Math.min(currentGroup,groups.length-1)); applyFilter(); renderGroups(); });
+      const chips=document.createElement('span'); chips.style.display='inline-flex'; chips.style.flexWrap='wrap'; chips.style.gap='6px'; chips.style.marginLeft='6px';
+      (g.items||[]).forEach((it,ci)=>{ const c=document.createElement('span'); c.className='chip'+(it.on?'':' off'); const t=document.createElement('button'); t.textContent=it.text; t.title='toggle'; t.addEventListener('click',()=>{ it.on=!it.on; applyFilter(); renderGroups(); }); const x=document.createElement('button'); x.textContent='×'; x.title='remove'; x.addEventListener('click',()=>{ g.items.splice(ci,1); applyFilter(); renderGroups(); }); c.append(t,x); chips.appendChild(c); });
+      box.append(title, toggle, set, del, chips); groupsEl.appendChild(box);
+    });
+  }
+
+  // Apply filter + charts
+  function applyFilter(){
+    if(!header.length){ renderHead(); tbody.innerHTML=''; rowsEl.textContent='rows: 0'; statusRows.textContent='rows: 0'; return; }
+    const idx=Object.fromEntries(header.map((h,i)=>[h,i]));
+    const required=['RunID','UTC','Tags','CWD','GitBranch','GitCommit','Python'];
+    const missing = required.filter(k=> !(k in idx));
+    if(missing.length){ showValidator([`Missing required: ${missing.join(', ')}`]); tbody.innerHTML=''; return; } else { showValidator([]); }
+
+    filtered = rows.filter(r=> rowMatches(r, idx));
+
+    // Sort
+    if(sortKey && (sortKey==='Local' || idx[sortKey]!=null)){
+      const keyIsTime = (sortKey==='UTC' || sortKey==='Local');
+      filtered.sort((a,b)=>{
+        const av=(sortKey==='Local')?Date.parse(a[idx['UTC']]):(keyIsTime?Date.parse(a[idx[sortKey]]):(a[idx[sortKey]]||''));
+        const bv=(sortKey==='Local')?Date.parse(b[idx['UTC']]):(keyIsTime?Date.parse(b[idx[sortKey]]):(b[idx[sortKey]]||''));
+        if(av<bv) return -1*sortDir; if(av>bv) return 1*sortDir; return 0;
+      });
+    }
+
+    if(filtered.length){
+      const last=filtered[filtered.length-1], run=last[idx['RunID']]; lastRunId=run;
+      const times=filtered.map(r=>r[idx['UTC']]);
+      runIdEl.textContent=`run: ${run}`;
+      rowsEl.textContent=`rows: ${filtered.length}`;
+      rangeEl.textContent=`range: ${fmtRange(times)}`;
+      $('lastTags').textContent=last[idx['Tags']]||'—';
+      $('lastGit').textContent=`${last[idx['GitBranch']]} @ ${last[idx['GitCommit']]}`;
+      $('pyVer').textContent=last[idx['Python']]||'—';
+      drawSpark(times); drawHistogram(times,20);
+      statusRun.textContent = runIdEl.textContent; statusRows.textContent = rowsEl.textContent; statusRange.textContent = rangeEl.textContent;
     } else {
-      clearInterval(timer); timer = null;
+      lastRunId=null; runIdEl.textContent='run: —'; rowsEl.textContent='rows: 0'; rangeEl.textContent='range: —';
+      $('lastTags').textContent='—'; $('lastGit').textContent='—'; $('pyVer').textContent='—';
+      sctx.clearRect(0,0,spark.width,spark.height); hctx.clearRect(0,0,hist.width,hist.height);
     }
-  });
-  loadMetaBtn.addEventListener('click', async () => {
-    const label = runIdEl.textContent.replace(/^run:\s*/, '');
-    if (!label || label === '—') return alert('No rows loaded yet.');
-    const metaPath = `../.seventh_horizon/runs/${label}/metadata.env`;
-    try {
-      metaBox.textContent = await loadText(metaPath);
-      metaBox.hidden = false;
-      metaBox.scrollIntoView({behavior:'smooth', block:'nearest'});
-    } catch (e) {
-      alert('Could not load metadata.env: ' + e.message);
-      metaBox.hidden = true;
-    }
+
+    renderHead(); renderTable(filtered, idx); buildFacets(filtered, idx); savePrefs();
+  }
+
+  // Run loop
+  async function run(path){
+    if(paused) return;
+    try{
+      const res=await loadCSV(path); header=res.header; rows=res.rows;
+      showValidator(res.issues);
+      const idx=Object.fromEntries(header.map((h,i)=>[h,i])); if(idx['Tags']!=null) buildTagSuggestionsAndKeys(rows, idx['Tags']);
+      applyFilter();
+      if(!metaBox.hidden && filtered.length){ const last=filtered[filtered.length-1]; const run=last[idx['RunID']]; const metaPath=`../.seventh_horizon/runs/${run}/metadata.env`; try { metaBox.textContent=await loadText(metaPath); } catch {} }
+    } catch(e){ showValidator([e.message||String(e)]); }
+  }
+
+  // Buttons & controls
+  reloadBtn.addEventListener('click', ()=> run(csvPathEl.value));
+  auto.addEventListener('change', ()=> restartTimer());
+  intervalSecEl.addEventListener('change', ()=> restartTimer());
+  function restartTimer(){ if(timer){ clearInterval(timer); timer=null; } if(auto.checked){ timer=setInterval(()=>run(csvPathEl.value), Math.max(1,Number(intervalSecEl.value||5))*1000); } run(csvPathEl.value); }
+  pauseBtn.addEventListener('click', ()=>{ paused=!paused; pauseBtn.textContent=paused?'Resume':'Pause'; savePrefs(); });
+
+  showLocal.addEventListener('change', ()=>{ applyFilter(); savePrefs(); });
+  clearFilter.addEventListener('click', ()=>{ tagFilter.value=''; applyFilter(); savePrefs(); });
+
+  // Time windows
+  twButtons.forEach(b=> b.addEventListener('click', ()=>{ twButtons.forEach(x=>x.classList.remove('pill')); b.classList.add('pill'); const v=b.dataset.win; timeWindowSec=(v===''?null:Number(v)); customWindowMin=null; customWinMin.value=''; savePrefs(); applyFilter(); }));
+  applyCustomWin.addEventListener('click', ()=>{ const m=Number(customWinMin.value); if(!isFinite(m)||m<=0){ alert('Enter a positive number of minutes.'); return; } timeWindowSec=Math.round(m*60); customWindowMin=m; twButtons.forEach(x=>x.classList.remove('pill')); savePrefs(); applyFilter(); });
+
+  // Keyboard shortcuts (keep your classics + Cmd/Ctrl K)
+  window.addEventListener('keydown', (e)=>{ if(e.target.matches('input,textarea')) return;
+    if((e.metaKey||e.ctrlKey) && e.key.toLowerCase()==='k'){ e.preventDefault(); openPalette(); return; }
+    if(e.key==='/'){ e.preventDefault(); tagFilter.focus(); return; }
+    if(e.key==='r'){ e.preventDefault(); run(csvPathEl.value); return; }
+    if(e.key==='a'){ e.preventDefault(); auto.checked=!auto.checked; restartTimer(); return; }
+    if(e.key==='l'){ e.preventDefault(); showLocal.checked=!showLocal.checked; applyFilter(); savePrefs(); return; }
+    if(e.key==='1'){ twButtons[0].click(); return; }
+    if(e.key==='2'){ twButtons[1].click(); return; }
+    if(e.key==='3'){ twButtons[2].click(); return; }
+    if(e.key==='0'){ twButtons[3].click(); return; }
+    if(e.code==='Space'){ e.preventDefault(); pauseBtn.click(); return; }
   });
 
+  // Presets
+  function listPresetNames(){ return Object.keys(localStorage).filter(k=>k.startsWith('hz.preset.')).map(k=>k.slice('hz.preset.'.length)).sort(); }
+  function refreshPresetDropdown(sel){ const names=listPresetNames(); presetSel.innerHTML='<option value="">(none)</option>'+names.map(n=>`<option>${n}</option>`).join(''); if(sel) presetSel.value=sel; }
+  function loadPreset(n){ const raw=localStorage.getItem('hz.preset.'+n); if(!raw) return; try{ const cfg=JSON.parse(raw); applyConfig(cfg,{autoLoad:true}); toast('Preset loaded: '+n);}catch{ toast('Invalid preset JSON','err'); } }
+  function savePresetAs(){ const n=prompt('Preset name:'); if(!n) return; localStorage.setItem('hz.preset.'+n, JSON.stringify(currentConfig())); refreshPresetDropdown(n); toast('Saved: '+n); }
+  function starPreset(){ const n=presetSel.value || prompt('Preset to overwrite:'); if(!n) return; localStorage.setItem('hz.preset.'+n, JSON.stringify(currentConfig())); refreshPresetDropdown(n); toast('Preset saved ★'); }
+  function deletePreset(){ const n=presetSel.value; if(!n) return; if(!confirm(`Delete preset "${n}"?`)) return; localStorage.removeItem('hz.preset.'+n); refreshPresetDropdown(''); toast('Deleted: '+n); }
+  presetLoad.addEventListener('click', ()=>{ const n=presetSel.value; if(n) loadPreset(n); });
+  presetSave.addEventListener('click', savePresetAs);
+  presetStar.addEventListener('click', starPreset);
+  presetDel.addEventListener('click', deletePreset);
+  copyShare.addEventListener('click', async ()=>{ const b64=encodeCfg(currentConfig()); const url=`${location.origin}${location.pathname}#cfg=${b64}`; try{ await navigator.clipboard.writeText(url); toast('Link copied'); }catch{ prompt('Copy this link:', url); }});
+  applyHash.addEventListener('click', ()=>{ const m=location.hash.match(/^#cfg=([\w+=/+-]+)$/); if(!m) return; const cfg=decodeCfg(m[1]); if(!cfg) return; applyConfig(cfg,{autoLoad:true}); });
+
+  // Runs browser (best effort)
+  async function scanRunsNow(){
+    try{
+      const html = await loadText('../.seventh_horizon/runs/');
+      const a = document.createElement('div'); a.innerHTML=html;
+      const links=[...a.querySelectorAll('a')].map(x=>x.getAttribute('href')).filter(Boolean);
+      const dirs = links.filter(h=>/\/$/.test(h)).map(h=>h.replace(/\/$/,'')).filter(n=>n!=='..');
+      const items=[];
+      for(const d of dirs){
+        const p = `../.seventh_horizon/runs/${d}/telemetry.csv`;
+        try { const r = await fetch(p, { method:'HEAD' }); if(r.ok) items.push({run:d, path:p}); } catch {}
+      }
+      items.sort((x,y)=> x.run.localeCompare(y.run));
+      runsBox.innerHTML = items.length? '' : '<div class="muted">No runs found.</div>';
+      for(const it of items){
+        const row=document.createElement('div'); row.className='runitem';
+        const left=document.createElement('div'); left.textContent=it.run;
+        const right=document.createElement('div');
+        const load=document.createElement('button'); load.textContent='Load'; load.addEventListener('click',()=>{ pinRun.checked=true; lastRunId=it.run; csvPathEl.value=it.path; run(csvPathEl.value); });
+        const copy=document.createElement('button'); copy.textContent='Copy path'; copy.addEventListener('click', async ()=>{ try{ await navigator.clipboard.writeText(it.path); toast('Path copied'); }catch{} });
+        right.append(load,copy); row.append(left,right); runsBox.appendChild(row);
+      }
+    } catch{ runsBox.innerHTML = '<div class="muted">Directory listing not allowed.</div>'; }
+  }
+  scanRuns.addEventListener('click', scanRunsNow);
+  pinLatest.addEventListener('click', async ()=>{ try{ const latestPath='../.seventh_horizon/runs/latest/telemetry.csv'; const {header:h, rows:r}=await loadCSV(latestPath); const idx=Object.fromEntries(h.map((c,i)=>[c,i])); if(!r.length||idx['RunID']==null) throw new Error('No rows or RunID missing'); const last=r[r.length-1]; const run=last[idx['RunID']]; pinRun.checked=true; lastRunId=run; csvPathEl.value=`../.seventh_horizon/runs/${run}/telemetry.csv`; savePrefs(); await run(csvPathEl.value); toast('Pinned: '+run);} catch(e){ toast('Pin latest failed: '+(e.message||e),'err'); }});
+  unpinRun.addEventListener('click', ()=>{ pinRun.checked=false; csvPathEl.value='../.seventh_horizon/runs/latest/telemetry.csv'; savePrefs(); run(csvPathEl.value); });
+
+  // Share/export helpers
+  function toCSV(arr){ return arr.map(r=>r.map(cell=>{ const s=String(cell??''); return /[",\n]/.test(s)?`"${s.replace(/"/g,'""')}"`:s; }).join(',')).join('\n'); }
+  function toTSV(arr){ return arr.map(r=>r.map(cell=>String(cell??'')).join('\t')).join('\n'); }
+  function filterSummary(){ const parts=[]; const q=(tagFilter.value||'').trim(); if(q) parts.push(useRegex.checked?`regex:${q}`:`contains:${q}`); groups.forEach((g,i)=>{ if(!g.on) return; const chips=(g.items||[]).filter(it=>it.on).map(it=>it.text); if(chips.length) parts.push(`G${i+1}[${chips.join(' OR ')}]`); }); if(pinRun.checked && lastRunId) parts.push(`pinned:${lastRunId}`); if(timeWindowSec!=null) parts.push(`window:${Math.round(timeWindowSec/60)}m`); return parts.join(' AND ')||'no filters'; }
+  function effectiveCsvPath(){ return (pinRun.checked && lastRunId) ? `../.seventh_horizon/runs/${lastRunId}/telemetry.csv` : csvPathEl.value; }
+  function currentConfig(){ return { csvPath: effectiveCsvPath(), tag: tagFilter.value, useRegex: !!useRegex.checked, auto: !!auto.checked, interval: Number(intervalSecEl.value||5), paused, showLocal: !!showLocal.checked, dark: !!darkMode.checked, compact: !!compactMode.checked, simple: !!simpleMode.checked, groups, currentGroup, pinRun: !!pinRun.checked, pinnedRunId: lastRunId||null, timeWindowSec, customWindowMin, columns, sortKey, sortDir }; }
+  const encodeCfg = (obj)=> btoa(unescape(encodeURIComponent(JSON.stringify(obj))));
+  const decodeCfg = (b64)=> { try { return JSON.parse(decodeURIComponent(escape(atob(b64)))); } catch { return null; } };
+
+  downloadCSV.addEventListener('click', ()=>{ if(!header.length) return alert('No data'); const vis=visibleColumnKeys(); const idx=Object.fromEntries(header.map((h,i)=>[h,i])); const data=[vis].concat(filtered.map(r=> vis.map(k=> k==='Local'?(showLocal.checked?localFromUTC(r[idx['UTC']]):''):(r[idx[k]]??'')))); const blob=new Blob([toCSV(data)],{type:'text/csv;charset=utf-8'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=`telemetry_filtered_${new Date().toISOString().replace(/[:.]/g,'-').slice(0,19)}.csv`; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url); });
+  copyTSV.addEventListener('click', async ()=>{ if(!header.length) return alert('No data'); const vis=visibleColumnKeys(); const idx=Object.fromEntries(header.map((h,i)=>[h,i])); const data=[vis].concat(filtered.map(r=> vis.map(k=> k==='Local'?(showLocal.checked?localFromUTC(r[idx['UTC']]):''):(r[idx[k]]??'')))); const text=toTSV(data); try{ await navigator.clipboard.writeText(text); toast('Copied'); }catch{ const ta=document.createElement('textarea'); ta.value=text; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); toast('Copied'); }});
+  downloadPNG.addEventListener('click', ()=>{ const pad=12,w=Math.max(spark.width,hist.width)+2*pad,rowH=22,headerH=rowH*4+pad,chartsH=spark.height+hist.height+pad*2,h=headerH+chartsH; const off=document.createElement('canvas'); off.width=w; off.height=h; const ctx=off.getContext('2d'); ctx.fillStyle='#fff'; ctx.fillRect(0,0,w,h); ctx.fillStyle='#000'; ctx.font='16px system-ui'; ctx.fillText('Seventh Horizon — Telemetry (filtered view)', pad, pad+16); ctx.font='12px system-ui'; let y=pad+16+8; [runIdEl.textContent||'', rowsEl.textContent||'', rangeEl.textContent||''].forEach(p=>{ ctx.fillText(p, pad, y); y+=rowH; }); ctx.fillText('Filters: '+filterSummary(), pad, y); y+=rowH; ctx.drawImage(spark, pad, headerH+pad); ctx.drawImage(hist, pad, headerH+pad+spark.height+pad); const url=off.toDataURL('image/png'); const a=document.createElement('a'); a.href=url; a.download=`telemetry_view_${new Date().toISOString().replace(/[:.]/g,'-').slice(0,19)}.png`; document.body.appendChild(a); a.click(); a.remove(); });
+  importJSONBtn.addEventListener('click', ()=> importJSONInput.click());
+  importJSONInput.addEventListener('change', async (ev)=>{ const f=ev.target.files[0]; if(!f) return; try{ const cfg=JSON.parse(await f.text()); applyConfig(cfg,{autoLoad:true}); } catch { alert('Invalid JSON'); } finally { importJSONInput.value=''; }});
+  dlLatest.addEventListener('click', ()=>{ const a=document.createElement('a'); a.href='../.seventh_horizon/runs/latest/telemetry.csv'; a.download='telemetry_latest.csv'; document.body.appendChild(a); a.click(); a.remove(); });
+
+  // Command Palette: open/close/search/apply
+  function openPalette(){ paletteWrap.style.display='block'; paletteInput.value=''; buildPalette(); setTimeout(()=>paletteInput.focus(),0); }
+  function closePalette(){ paletteWrap.style.display='none'; }
+  function buildPalette(){
+    const q=paletteInput.value.trim().toLowerCase();
+    const items=[];
+    // 1) Tag tokens
+    const idx=Object.fromEntries(header.map((h,i)=>[h,i])); const KV=/\b([A-Za-z0-9_.-]+)=([^,\|; ]+)/g; const tokMap=new Map();
+    filtered.forEach(r=>{ const raw=(r[idx['Tags']]||''); let m; while((m=KV.exec(raw))!==null){ const tok=`${m[1]}=${m[2]}`; tokMap.set(tok,(tokMap.get(tok)||0)+1); } });
+    for(const [tok,c] of tokMap){ if(!q || tok.toLowerCase().includes(q)) items.push({type:'tag', label:tok, meta:`${c} hits`}); }
+    // 2) Keys only
+    const keySet=new Set(); [...tokMap.keys()].forEach(t=> keySet.add(t.split('=')[0])); for(const k of keySet){ if(!q || k.toLowerCase().includes(q)) items.push({type:'key', label:k, meta:'key'}); }
+    // 3) Runs
+    const runSet=new Set(filtered.map(r=>r[idx['RunID']]||'')); for(const r of runSet){ if(!q || r.toLowerCase().includes(q)) items.push({type:'run', label:r, meta:'run'}); }
+
+    items.sort((a,b)=> a.label.localeCompare(b.label));
+    paletteList.innerHTML=''; items.slice(0,200).forEach((it,i)=>{
+      const row=document.createElement('div'); row.className='item'; row.setAttribute('role','option'); row.dataset.idx=i;
+      row.innerHTML=`<div>${it.type==='tag'?'🏷️':it.type==='key'?'🔑':'🎯'} ${it.label}</div><div class="muted">${it.meta}</div>`;
+      row.addEventListener('click',()=> applyPaletteItem(it)); paletteList.appendChild(row);
+    });
+    // keyboard selection
+    let pos=0; highlight(); function highlight(){ [...paletteList.children].forEach((n,i)=> n.classList.toggle('active', i===pos)); }
+    paletteInput.onkeydown=(e)=>{ if(e.key==='ArrowDown'){ e.preventDefault(); pos=Math.min(pos+1, paletteList.children.length-1); highlight(); } else if(e.key==='ArrowUp'){ e.preventDefault(); pos=Math.max(pos-1,0); highlight(); } else if(e.key==='Enter'){ e.preventDefault(); const it=items[pos]; if(it) applyPaletteItem(it); } else if(e.key==='Escape'){ e.preventDefault(); closePalette(); } };
+  }
+  function applyPaletteItem(it){
+    if(it.type==='tag'){ ensureGroup(); const g=groups[currentGroup]; if(!g.items.find(ch=>ch.text.toLowerCase()===it.label.toLowerCase())) g.items.push({text:it.label,on:true}); renderGroups(); applyFilter(); }
+    if(it.type==='key'){ tagFilter.value = it.label + '='; tagFilter.focus(); }
+    if(it.type==='run'){ pinRun.checked=true; lastRunId=it.label; csvPathEl.value=`../.seventh_horizon/runs/${it.label}/telemetry.csv`; run(csvPathEl.value); }
+    closePalette();
+  }
+  openPaletteBtn.addEventListener('click', openPalette);
+  paletteClose.addEventListener('click', closePalette);
+  paletteInput.addEventListener('input', buildPalette);
+  paletteWrap.addEventListener('click', (e)=>{ if(e.target===paletteWrap) closePalette(); });
+
+  // Toast helper (uses validator banner styling)
+  let toastT=null; function toast(msg, kind='ok'){ clearTimeout(toastT); const tmp=document.createElement('div'); tmp.className=`banner ${kind}`; tmp.style.position='fixed'; tmp.style.right='18px'; tmp.style.bottom='18px'; tmp.style.zIndex='200'; tmp.textContent=msg; document.body.appendChild(tmp); toastT=setTimeout(()=> tmp.remove(), 1800); }
+
+  // URL param ?path=
+  try{ const u=new URL(location.href); const p=u.searchParams.get('path'); if(p){ csvPathEl.value=p; savePrefs(); } }catch{}
+  // First-run dark mode = respect system
+  (function(){ const stored = JSON.parse(localStorage.getItem('hz.prefs')||'{}').dark; if(stored==null){ const prefersDark = matchMedia('(prefers-color-scheme: dark)').matches; document.documentElement.classList.toggle('dark', prefersDark); if(darkMode) darkMode.checked=prefersDark; } })();
+
+  // Init
+  loadPrefs(); renderColumnControls(); renderHead(); refreshPresetDropdown();
+  // Start
   run(csvPathEl.value);
+  if(auto.checked){ restartTimer(); }
 })();
 </script>
