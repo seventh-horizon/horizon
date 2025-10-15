@@ -1,10 +1,48 @@
-name: E2E UI
+name: CI
 
 on:
   push:
   pull_request:
 
 jobs:
+  # ---------- Python unit tests ----------
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Python deps
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          if [ -f pyproject.toml ] || [ -f setup.cfg ]; then pip install -e .; fi
+          if [ -f tests/requirements.txt ]; then pip install -r tests/requirements.txt; fi
+
+      - name: Prepare test fixtures (phi_matrix.csv, kappa.csv)
+        run: |
+          mkdir -p tools/out
+          cat > tools/out/phi_matrix.csv << 'CSV'
+          ,A,B
+          A,1.0,2.0
+          B,2.0,1.0
+          CSV
+          cat > tools/out/kappa.csv << 'CSV'
+          node,kappa
+          A,0.5
+          B,0.7
+          CSV
+          ls -lah tools/out
+
+      - name: Run pytest
+        run: pytest -q
+
+  # ---------- UI e2e tests (Playwright) ----------
   e2e:
     runs-on: ubuntu-latest
     defaults:
@@ -14,20 +52,35 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Debug workspace layout
+        run: |
+          pwd
+          ls -la
+          echo "----"
+          ls -la seventh-horizon-ui || true
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
-          cache-dependency-path: seventh-horizon-ui/package-lock.json
+          cache-dependency-path: 'seventh-horizon-ui/package-lock.json'
 
       - name: Install dependencies
         run: npm ci
 
+      - name: Build app
+        run: npm run build
+
       - name: Install Playwright browsers
         run: npx playwright install --with-deps
 
+      - name: Start preview server
+        run: |
+          nohup npm run preview -- --port 5173 --host 0.0.0.0 >/dev/null 2>&1 &
+          npx wait-on http://localhost:5173
+
       - name: Run Playwright tests
-        run: npx playwright test
         env:
           CI: "true"
+        run: npx playwright test

@@ -1,3 +1,14 @@
+import os, sys
+from pathlib import Path
+
+OUT = Path(os.environ.get("OUT", "tools/out"))
+phi_path = OUT / "phi_matrix.csv"
+kappa_path = OUT / "kappa.csv"
+
+if not phi_path.exists():
+    print(f"Error: {phi_path} does not exist. Please generate it before running this script.", file=sys.stderr)
+    sys.exit(1)
+
 #!/usr/bin/env python3
 import os, csv, glob, json, tempfile
 os.environ["LC_ALL"]="C"; os.environ["TZ"]="UTC"
