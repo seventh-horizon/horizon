@@ -26,3 +26,6 @@ dist-ssr
 !public/.seventh_horizon/**
 !public/.seventh_horizon/
 !public/.seventh_horizon/**
+seventh-horizon-ui/test-results/
+test-results/
+seventh_horizon.egg-info/
