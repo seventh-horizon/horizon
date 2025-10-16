@@ -1,3 +1,23 @@
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+
+export default defineConfig(({ mode }) => {
+  const isDev = mode === 'development';
+  return {
+    plugins: [react()],
+    base: isDev ? '/' : '/horizon/',
+    server: {
+      open: isDev ? '/' : '/horizon/',
+    },
+    preview: {
+      open: '/horizon/',
+    },
+    build: {
+      outDir: 'dist',
+    },
+  };
+});
+
 {
   "name": "seventh-horizon-ui",
   "private": true,
@@ -7,7 +27,12 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:run": "vitest run",
+    "dev:root": "vite --base=/",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "react": "^19.1.1",
@@ -26,6 +51,9 @@
     "globals": "^16.4.0",
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.45.0",
-    "vite": "^7.1.7"
+    "vite": "^7.1.7",
+    "vitest": "^3.0.0",
+    "@vitest/ui": "^3.0.0",
+    "jsdom": "^25.0.0"
   }
 }
