@@ -1,7 +1,0 @@
-[console_scripts]
-build-timeline-index = tools.build_timeline_index:main
-dump-all = tools.dump_all:main
-dump-classifier = tools.dump_classifier:main
-dump-run = tools.dump_run:main
-make-snapshot = tools.make_snapshot:main
-validate-timeline = tools.validate_timeline:main
