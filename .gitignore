@@ -1,36 +1,11 @@
-out/
-!.keep
-.nox/
-coverage.xml
-*.tgz
-*.tar.gz
-*.zip
-keys/*.key
-dist/
-node_modules/
-.next/
-.env
-# Seventh Horizon artifacts
-.seventh_horizon/runs/
-dump_*.tar.gz
-# Seventh Horizon artifacts
-.seventh_horizon/runs/
-dump_*.tar.gz
-# Seventh Horizon artifacts
-.seventh_horizon/runs/
-dump_*.tar.gz
-public/field/timeline/epoch_*.json
-# local and build noise
-.venv/
-.dump_tmp_epoch_*/
-tools/__pycache__/
-tests/__pycache__/
-public/sw.js
-scripts/dump-latest
-scripts/snapshot
-scripts/validate
-*.egg-info/
-__pycache__/
-*.py[cod]
-*..class
-*.bak
+# From repo root
+pbpaste > .gitignore  # (If you just copied the block)
+# or use your editor to paste it in .gitignore
+
+# Make sure previously tracked junk is unstaged/removed from tracking:
+git rm -r --cached seventh-horizon-ui/playwright-report seventh-horizon-ui/test-results || true
+git rm -r --cached **/__pycache__ || true
+
+git add .gitignore
+git commit -m "chore(gitignore): align for UI (Playwright) + Python tools"
+git push
