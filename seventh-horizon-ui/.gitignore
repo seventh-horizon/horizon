@@ -1,23 +1,43 @@
-node_modules/
-dist/
-.env
+# --- OS / Editor junk ---
 .DS_Store
-vite.config.ts.timestamp*
-*.local# Test & coverage artifacts
-coverage/
-test-results/
-playwright-report/
-.vitest/
-# Local caches
-node_modules/
+Thumbs.db
+*.swp
+*.swo
+*.orig
 *.log
-.DS_Store
-# Test & coverage artifacts
-coverage/
-test-results/
-playwright-report/
-.vitest/
-# Local caches
-node_modules/
-*.log
-.DS_Store
+.vscode/
+.idea/
+
+# --- Node / Vite app (seventh-horizon-ui) ---
+seventh-horizon-ui/node_modules/
+seventh-horizon-ui/dist/
+seventh-horizon-ui/.vite/
+seventh-horizon-ui/.cache/
+seventh-horizon-ui/.eslintcache
+
+# Playwright transient outputs (do NOT ignore baseline snapshots)
+seventh-horizon-ui/playwright-report/
+seventh-horizon-ui/test-results/
+
+# Keep snapshots: tests/*-snapshots/** are committed
+# (No ignore rule needed as long as we don't wildcard-ignore tests images globally.)
+
+# --- Python (tools, tests, packaging) ---
+__pycache__/
+*.py[cod]
+*.pyo
+*.so
+*.egg-info/
+.eggs/
+.pytest_cache/
+.mypy_cache/
+.cache/
+.venv/
+venv/
+env/
+
+# --- Project-level tarballs / dumps / artifacts ---
+dump_*.tar.gz
+
+# --- Misc CI temps ---
+/tmp/
