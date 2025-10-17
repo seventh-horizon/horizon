@@ -65,6 +65,9 @@ function App() {
   // Column chooser modal
   const [showColsModal, setShowColsModal] = useState<boolean>(false);
 
+  // Drawer state for filters sidebar
+  const [drawerOpen, setDrawerOpen] = useState<boolean>(true);
+
   // Schema warnings
   const REQUIRED_COLS = ['RunID', 'UTC', 'Tags', 'CWD', 'GitBranch', 'GitCommit', 'Python'];
   const [schemaWarn, setSchemaWarn] = useState<string[]>([]);
@@ -427,6 +430,9 @@ function App() {
               e.currentTarget.value = '';
             }}
           />
+          <button className="pill" data-test="open-drawer" onClick={() => setDrawerOpen(d => !d)}>
+            {drawerOpen ? '◀ Hide Filters' : '▶ Show Filters'}
+          </button>
           <button className="pill" onClick={() => setShowColsModal(true)}>☰ Columns…</button>
           <button className="pill" onClick={() => { navigator.clipboard.writeText(window.location.href); setCopied('Link copied'); setTimeout(()=>setCopied(null), 900); }}>🔗 Copy link</button>
           <span className="pill switch">
@@ -453,8 +459,9 @@ function App() {
         </div>
       </header>
 
-      <div className="layout" style={{ display: 'grid', gridTemplateColumns: '280px 1fr', gap: 16, marginTop: 16 }}>
-        <aside className="card" style={{ padding: 16, borderRadius: 12 }}>
+      <div className="layout" style={{ display: 'grid', gridTemplateColumns: drawerOpen ? '280px 1fr' : '1fr', gap: 16, marginTop: 16 }}>
+        {drawerOpen && (
+        <aside className="card" data-test="drawer" style={{ padding: 16, borderRadius: 12 }}>
           <h3 style={{ marginTop: 0 }}>Runs</h3>
           <div style={{ opacity: .7 }}>No runs</div>
 
@@ -484,6 +491,7 @@ function App() {
             })}
           </div>
         </aside>
+        )}
 
         <section className={`card ${wrap ? 'wrap-on' : ''}`} style={{ padding: 16, borderRadius: 12 }}>
           <h2 style={{ marginTop: 0 }}>Filtered Rows</h2>
