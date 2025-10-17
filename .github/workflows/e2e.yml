@@ -24,7 +24,7 @@ jobs:
           if [ -f pyproject.toml ] || [ -f setup.cfg ]; then pip install -e .; fi
           if [ -f tests/requirements.txt ]; then pip install -r tests/requirements.txt; fi
 
-      - name: Prepare test fixtures (phi_matrix.csv, kappa.csv)
+      - name: Prepare test fixtures (phi_matrix.csv, kappa.csv, summary.json)
         run: |
           mkdir -p tools/out
           cat > tools/out/phi_matrix.csv << 'CSV'
@@ -37,6 +37,9 @@ jobs:
           A,0.5
           B,0.7
           CSV
+          cat > tools/out/summary.json << 'JSON'
+          {"label": "test", "Phi": 1.5}
+          JSON
           ls -lah tools/out
 
       - name: Run pytest
