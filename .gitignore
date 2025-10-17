@@ -29,3 +29,6 @@ public/sw.js
 scripts/dump-latest
 scripts/snapshot
 scripts/validate
+seventh-horizon-ui/test-results/
+tests/__pycache__/
+**/*.pyc
