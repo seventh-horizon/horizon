@@ -46,8 +46,6 @@ jobs:
   # ---------- UI e2e tests (Playwright) ----------
   e2e:
     runs-on: ubuntu-latest
-    env:
-      TZ: UTC
     defaults:
       run:
         working-directory: seventh-horizon-ui
@@ -55,106 +53,30 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20.x'
-          cache: 'npm'
-          cache-dependency-path: 'seventh-horizon-ui/package-lock.json'
-
-      - name: npm ci
-        run: npm ci
-
-      # Restore Playwright browsers cache BEFORE install
-      - name: Restore Playwright browsers cache
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/ms-playwright
-          key: playwright-${{ runner.os }}-${{ hashFiles('seventh-horizon-ui/package-lock.json') }}
-          restore-keys: |
-            playwright-${{ runner.os }}-
-
-      # Fast path on non-main: Chromium only, no --with-deps
-      - name: Install Playwright (Chromium only for PRs)
-        if: github.ref != 'refs/heads/main'
+      - name: Debug workspace layout
         run: |
-          npx playwright install chromium
-          echo "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1" >> $GITHUB_ENV
-
-      # Full path on main: all browsers + system deps (slower, but thorough)
-      - name: Install Playwright (all browsers with deps on main)
-        if: github.ref == 'refs/heads/main'
-        run: |
-          npx playwright install --with-deps
-          echo "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1" >> $GITHUB_ENV
-
-      - name: Run Playwright tests (Chromium only on PRs)
-        if: github.ref != 'refs/heads/main'
-        env:
-          CI: true
-        run: npm run test:e2e -- --project=chromium
-
-      - name: Run Playwright tests (full) on main
-        if: github.ref == 'refs/heads/main'
-        env:
-          CI: true
-        run: npm run test:e2e
-
-      - name: Upload Playwright HTML report
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: playwright-artifacts-${{ github.run_id }}
-          path: seventh-horizon-ui/playwright-report
-          if-no-files-found: ignore
-          retention-days: 7
-
-  generate_snapshots:
-    name: Generate Playwright Linux snapshots (manual)
-    if: github.event_name == 'workflow_dispatch'
-    runs-on: ubuntu-latest
-    env:
-      TZ: UTC
-    defaults:
-      run:
-        working-directory: seventh-horizon-ui
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+          pwd
+          ls -la
+          echo "----"
+          ls -la seventh-horizon-ui || true
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20.x'
+          node-version: '20'
           cache: 'npm'
           cache-dependency-path: 'seventh-horizon-ui/package-lock.json'
 
-      - name: Install deps
+      - name: Install dependencies
         run: npm ci
 
-      - name: Restore Playwright browsers cache
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/ms-playwright
-          key: playwright-${{ runner.os }}-${{ hashFiles('seventh-horizon-ui/package-lock.json') }}
-          restore-keys: |
-            playwright-${{ runner.os }}-
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps
 
-      - name: Install Playwright (Chromium only)
-        run: npx playwright install chromium
-
-      - name: Generate Chromium snapshots on Linux
+      - name: Run Playwright tests
         env:
-          CI: true
-        run: npm run test:e2e -- --project=chromium --update-snapshots
-
-      - name: Upload generated snapshots
-        uses: actions/upload-artifact@v4
-        with:
-          name: playwright-linux-snapshots-${{ github.run_id }}
-          path: seventh-horizon-ui/tests/*-snapshots/*.png
-          if-no-files-found: error
-          retention-days: 7
+          CI: "true"
+        run: npx playwright test
 
   deploy:
     needs: e2e
@@ -168,14 +90,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '20.x'
-
-      - name: Enable npm cache
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20.x'
-          cache: 'npm'
-          cache-dependency-path: 'seventh-horizon-ui/package-lock.json'
+          node-version: '20'
 
       - name: Build UI
         working-directory: seventh-horizon-ui
