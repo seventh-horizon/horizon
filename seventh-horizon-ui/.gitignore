@@ -3,4 +3,21 @@ dist/
 .env
 .DS_Store
 vite.config.ts.timestamp*
-*.local
+*.local# Test & coverage artifacts
+coverage/
+test-results/
+playwright-report/
+.vitest/
+# Local caches
+node_modules/
+*.log
+.DS_Store
+# Test & coverage artifacts
+coverage/
+test-results/
+playwright-report/
+.vitest/
+# Local caches
+node_modules/
+*.log
+.DS_Store
