@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 
-export type CmdResult = { kind: 'run' | 'tag'; text: string } | { kind: 'hint'; text: string };
+// ... (props and types remain the same) ...
 
-export default function CommandPalette({
+// ✅ FIX: Changed from "export default function" to "export function"
+export function CommandPalette({
   open, onClose, runs, tags, applyFilter
 }:{
   open: boolean;
@@ -12,41 +13,51 @@ export default function CommandPalette({
   applyFilter: (f:{ tag?: string; runId?: string }) => void;
 }){
   const [q, setQ] = useState('');
+  const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
+  const resultsRef = useRef<HTMLDivElement>(null);
 
-  const results: CmdResult[] = useMemo(()=>{
+  const results: { kind: 'run' | 'tag' | 'hint'; text: string }[] = useMemo(()=>{
     const qq = q.trim().toLowerCase();
     if(!qq) return [{ kind:'hint', text:'Type to search runs and tags' }];
-    const runMatches = runs.filter(r => r.toLowerCase().includes(qq)).slice(0, 8).map(r => ({ kind:'run', text:r })) as CmdResult[];
-    const tagMatches = tags.filter(t => t.toLowerCase().includes(qq)).slice(0, 8).map(t => ({ kind:'tag', text:t })) as CmdResult[];
+    const runMatches = runs.filter(r => r.toLowerCase().includes(qq)).slice(0, 8).map(r => ({ kind:'run' as const, text:r }));
+    const tagMatches = tags.filter(t => t.toLowerCase().includes(qq)).slice(0, 8).map(t => ({ kind:'tag' as const, text:t }));
     const out = [...runMatches, ...tagMatches];
     return out.length ? out : [{ kind:'hint', text:'No matches' }];
   }, [q, runs, tags]);
 
-  useEffect(()=>{ if(open){ setQ(''); setTimeout(()=> inputRef.current?.focus(), 0); }}, [open]);
+  useEffect(()=>{ if(open){ setQ(''); setSelectedIndex(0); setTimeout(()=> inputRef.current?.focus(), 50); }}, [open]);
 
   useEffect(()=>{
     function onKey(e: KeyboardEvent){
       if(e.key === 'Escape' && open){ e.preventDefault(); onClose(); }
-      if((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k'){ e.preventDefault(); onClose(); } // toggle handled in App
+      if((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k'){ e.preventDefault(); onClose(); }
       if(e.key === 'Enter' && open){
-        const first = results.find(r => r.kind === 'run' || r.kind === 'tag');
-        if(first){
-          if(first.kind === 'run') applyFilter({ runId:first.text });
-          else applyFilter({ tag:first.text });
+        const target = results[selectedIndex];
+        if(target && (target.kind === 'run' || target.kind === 'tag')){
+          if(target.kind === 'run') applyFilter({ runId:target.text });
+          else applyFilter({ tag:target.text });
           onClose();
         }
+      }
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        setSelectedIndex(i => Math.min(results.length - 1, i + 1));
+      }
+      if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        setSelectedIndex(i => Math.max(0, i - 1));
       }
     }
     window.addEventListener('keydown', onKey);
     return ()=> window.removeEventListener('keydown', onKey);
-  }, [open, results, onClose, applyFilter]);
+  }, [open, results, selectedIndex, onClose, applyFilter]);
 
   if(!open) return null;
 
   return (
-    <div style={overlay} onClick={onClose} aria-modal role="dialog">
-      <div style={panel} onClick={e=>e.stopPropagation()}>
+    <div className="modal-backdrop" onClick={onClose} aria-modal role="dialog">
+      <div className="modal" style={{width: 640}} onClick={e=>e.stopPropagation()}>
         <div style={{display:'flex',alignItems:'center',gap:8}}>
           <span style={{opacity:.7, width:36, textAlign:'center'}}>⌘K</span>
           <input
@@ -54,15 +65,16 @@ export default function CommandPalette({
             value={q}
             onChange={e=>setQ(e.target.value)}
             placeholder="Find a run id or tag…"
-            style={input}
+            className="input"
+            style={{flex: 1}}
           />
-          <button onClick={onClose}>Close</button>
+          <button className="pill" onClick={onClose}>Close</button>
         </div>
-        <div style={{marginTop:10, maxHeight:260, overflow:'auto'}}>
+        <div ref={resultsRef} style={{marginTop:10, maxHeight:260, overflow:'auto'}}>
           {results.map((r,i)=>(
             <div
               key={i}
-              style={row}
+              className={`menu-item ${selectedIndex === i ? 'active' : ''}`}
               onClick={()=>{
                 if(r.kind === 'run') applyFilter({ runId:r.text });
                 if(r.kind === 'tag') applyFilter({ tag:r.text });
@@ -80,20 +92,3 @@ export default function CommandPalette({
     </div>
   );
 }
-
-const overlay:React.CSSProperties = {
-  position:'fixed', inset:0, zIndex:9998, background:'rgba(0,0,0,.45)',
-  display:'flex', alignItems:'flex-start', justifyContent:'center', paddingTop:80
-};
-const panel:React.CSSProperties = {
-  width:640, background:'var(--bg-1)', color:'var(--fg-0)',
-  borderRadius:14, boxShadow:'var(--shadow-2)', padding:12
-};
-const input:React.CSSProperties = {
-  flex:1, padding:'8px 10px', borderRadius:10,
-  border:'1px solid color-mix(in oklab, var(--fg-1) 18%, transparent)',
-  background:'var(--bg-0)', color:'var(--fg-0)'
-};
-const row:React.CSSProperties = {
-  padding:'8px 6px', borderRadius:10, cursor:'pointer'
-};

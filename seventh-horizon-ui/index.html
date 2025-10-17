@@ -3,20 +3,21 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect rx='14' width='64' height='64' fill='%230a0812'/%3E%3CradialGradient id='g' cx='50%25' cy='70%25' r='55%25'%3E%3Cstop offset='0%25' stop-color='%23b06cff'/%3E%3Cstop offset='100%25' stop-color='%230a0812' stop-opacity='0'/%3E%3C/radialGradient%3E%3Ccircle cx='32' cy='38' r='20' fill='url(%23g)'/%3E%3Cpath d='M18 34h28M18 26h18M18 42h24' stroke='%23e8e3ff' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E">
-    <meta name="theme-color" content="#0a0812" />
-    <title>Seventh Horizon — Signal Veil Telemetry</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>Seventh Horizon</title>
+    <!-- Prevents a flash of the wrong theme on load -->
+    <script>
+      try {
+        var t = localStorage.getItem('theme');
+        // Default to 'rose' if the stored theme is invalid or not set
+        if (t !== 'rose' && t !== 'veil') t = 'rose';
+        document.documentElement.setAttribute('data-theme', t);
+      } catch (e) {
+        // If localStorage is blocked, do nothing.
+      }
+    </script>
   </head>
   <body>
-    <!-- Splash screen -->
-    <div id="veil-splash" aria-hidden="true">
-      <div id="veil-logo">
-        <div id="veil-dot"></div>
-        <div id="veil-text">Seventh Horizon • Loading…</div>
-      </div>
-    </div>
-
-    <!-- React mounts here -->
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

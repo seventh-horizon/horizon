@@ -1,5 +1,14 @@
 import { test, expect } from '@playwright/test';
 
+test('landing looks correct', async ({ page }) => {
+  await page.goto('/');
+  await expect(page).toHaveScreenshot('landing.png', {
+    // Lock to viewport to avoid page-height diffs across environments
+    fullPage: false,
+    maxDiffPixelRatio: 0.02,
+  });
+});
+
 // This spec validates that the global search input actually filters table rows.
 // It is robust to 0–1 row edge-cases and to placeholder "no data" rows that use colspan.
 

@@ -1,21 +1,19 @@
-/* Make Veil the active theme on load */
-import './themes/signal-veil.css';
-import './themes/signal-rose.css';
-
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import App from './App';
+import AppRefactored from './App.refactored'; // ✅ Correct: Imports the new refactored component
+// import ErrorBoundary from './components/ErrorBoundary'; // Temporarily commented out for debugging
+import './index.css';
 
-// Initialize theme from saved preference (defaults to 'veil')
-document.documentElement.dataset.theme = (localStorage.getItem('hz.theme') || 'veil') as 'veil' | 'rose';
+const rootElement = document.getElementById('root');
 
-ReactDOM.createRoot(document.getElementById('root')!).render(
+if (!rootElement) {
+  throw new Error("Failed to find the root element. Make sure your index.html has an element with id='root'.");
+}
+
+ReactDOM.createRoot(rootElement).render(
   <React.StrictMode>
-    <App />
-  </React.StrictMode>,
+    {/* <ErrorBoundary> */}
+      <AppRefactored />
+    {/* </ErrorBoundary> */}
+  </React.StrictMode>
 );
-
-// Hide the splash after first frame (if present)
-requestAnimationFrame(() => {
-  document.getElementById('veil-splash')?.classList.add('hidden');
-});

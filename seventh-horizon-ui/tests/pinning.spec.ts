@@ -1,14 +1,18 @@
 import { test, expect } from '@playwright/test';
 
-test('pin latest run updates the path', async ({ page }) => {
-  await page.goto('http://localhost:5173/');
+// Verifies that clicking the toolbar "Filters" (open-drawer) button opens the drawer
+// This matches the app's end-to-end environment used by your other Playwright tests.
 
-  const pinLatest = page.getByRole('button', { name: /pin latest/i });
-  if (!(await pinLatest.isVisible())) test.skip(true, 'Pin Latest not present');
+test('toolbar Filters button opens the drawer', async ({ page }) => {
+  // Visit the app root (uses baseURL from playwright.config.ts if set)
+  await page.goto('/');
 
-  await pinLatest.click();
+  // Find the drawer opener by stable data-test hook
+  const opener = page.locator('[data-test="open-drawer"]');
+  await expect(opener).toBeVisible();
+  await opener.click();
 
-  const pathInput = page.locator('#csvPath');
-  const value = (await pathInput.count()) ? await pathInput.inputValue() : '';
-  expect(value).toMatch(/\.seventh_horizon\/runs\/(latest|epoch_[^/]+)\/telemetry\.csv/);
+  // The drawer should become visible after clicking
+  const drawer = page.locator('[data-test="drawer"], [role="dialog"], aside[role="complementary"], .drawer, .sidepanel');
+  await expect(drawer).toBeVisible();
 });
