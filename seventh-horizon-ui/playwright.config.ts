@@ -1,16 +1,35 @@
-import { defineConfig } from '@playwright/test';
+import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
-  webServer: {
-    command: 'npm run dev -- --port 5173 --host',
-    url: 'http://localhost:5173/',
-    reuseExistingServer: true,
-    timeout: 120_000,
-  },
-  testDir: './tests',
+  testDir: 'tests',
+  reporter: [['html', { outputFolder: 'playwright-report', open: 'never' }]],
   use: {
-    baseURL: 'http://localhost:5173/',
-    headless: true,
-    viewport: { width: 1280, height: 800 },
+    baseURL: 'http://localhost:5173/', // lets tests use page.goto('/')
+    locale: 'en-US',
+    timezoneId: 'UTC',
+    colorScheme: 'light',
+    geolocation: { longitude: 0, latitude: 0 },
+    permissions: ['geolocation'],
+  },
+  projects: [
+    {
+      name: 'chromium',
+      use: { ...devices['Desktop Chrome'], viewport: { width: 1280, height: 800 }, launchOptions: { slowMo: 50 } },
+    },
+    {
+      name: 'firefox',
+      use: { ...devices['Desktop Firefox'], viewport: { width: 1280, height: 800 }, launchOptions: { slowMo: 50 } },
+    },
+    {
+      name: 'webkit',
+      use: { ...devices['Desktop Safari'], viewport: { width: 1280, height: 800 }, launchOptions: { slowMo: 50 } },
+    },
+  ],
+  webServer: {
+    command: 'npm run dev:root',       // serves your app at /
+    url: 'http://localhost:5173/',
+    reuseExistingServer: !process.env.CI,
+    stdout: 'pipe',
+    stderr: 'pipe',
   },
 });

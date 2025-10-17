@@ -1,0 +1,705 @@
+diff --git a/package.json b/package.json
+index 1234568..a1b2c3d 100644
+--- a/package.json
++++ b/package.json
+@@ -1,18 +1,28 @@
+ {
+   "name": "seventh-horizon-ui",
+   "version": "0.0.0",
+   "dependencies": {
+-    "lz-string": "^1.5.0"
++    "lz-string": "^1.5.0",
++    "immer": "^10.1.1"
+   },
+   "devDependencies": {
+-    "eslint": "^9.11.1",
+-    "eslint-plugin-react": "^7.35.0",
+-    "@typescript-eslint/parser": "^8.8.1",
+-    "@typescript-eslint/eslint-plugin": "^8.8.1"
++    "eslint": "^9.11.1",
++    "eslint-plugin-react": "^7.35.0",
++    "eslint-plugin-react-hooks": "^4.6.2",
++    "eslint-plugin-jsx-a11y": "^6.8.0",
++    "typescript": "^5.6.3",
++    "vite": "^5.4.8",
++    "@vitejs/plugin-react": "^4.3.1",
++    "@typescript-eslint/parser": "^8.8.1",
++    "@typescript-eslint/eslint-plugin": "^8.8.1",
++    "vitest": "^2.1.3"
+   },
+   "scripts": {
+     "dev": "vite",
+     "build": "tsc -b && vite build",
+     "preview": "vite preview",
+-    "lint": "eslint --ext .ts,.tsx src",
++    "lint": "eslint --ext .ts,.tsx src",
++    "test": "vitest run",
+     "typecheck": "tsc -b --pretty"
+   }
+ }
+diff --git a/tsconfig.json b/tsconfig.json
+new file mode 100644
+index 0000000..1111111
+--- /dev/null
++++ b/tsconfig.json
+@@ -0,0 +1,39 @@
++{
++  "compilerOptions": {
++    "target": "ES2021",
++    "module": "ESNext",
++    "lib": ["ES2021", "DOM"],
++    "jsx": "react-jsx",
++    "moduleResolution": "Bundler",
++    "resolveJsonModule": true,
++    "esModuleInterop": true,
++    "skipLibCheck": true,
++    "strict": true,
++    "noImplicitReturns": true,
++    "noUncheckedIndexedAccess": true,
++    "noUnusedLocals": true,
++    "noUnusedParameters": true,
++    "noFallthroughCasesInSwitch": true,
++    "forceConsistentCasingInFileNames": true,
++    "isolatedModules": true,
++    "types": ["vite/client"]
++  },
++  "include": ["src", "tests"],
++  "exclude": ["dist", "build", "node_modules"]
++}
+diff --git a/vite.config.ts b/vite.config.ts
+new file mode 100644
+index 0000000..2222222
+--- /dev/null
++++ b/vite.config.ts
+@@ -0,0 +1,23 @@
++import { defineConfig } from 'vite';
++import react from '@vitejs/plugin-react';
++
++const base =
++  process.env.BASE_PATH ||
++  (process.env.NODE_ENV === 'production' ? '/horizon/' : '/');
++
++export default defineConfig({
++  base,
++  plugins: [react()],
++  worker: { format: 'es' },
++  build: {
++    target: 'es2021',
++    sourcemap: true
++  },
++  test: {
++    environment: 'node',
++    restoreMocks: true
++  }
++});
+diff --git a/eslint.config.js b/eslint.config.js
+new file mode 100644
+index 0000000..3333333
+--- /dev/null
++++ b/eslint.config.js
+@@ -0,0 +1,38 @@
++// Flat config for ESLint 9+
++import js from '@eslint/js';
++import tseslint from 'typescript-eslint';
++import react from 'eslint-plugin-react';
++import reactHooks from 'eslint-plugin-react-hooks';
++import jsxA11y from 'eslint-plugin-jsx-a11y';
++
++export default [
++  js.configs.recommended,
++  ...tseslint.configs.recommended,
++  {
++    files: ['**/*.{ts,tsx}'],
++    languageOptions: {
++      parser: tseslint.parser,
++      parserOptions: {
++        ecmaVersion: 2021,
++        sourceType: 'module',
++        ecmaFeatures: { jsx: true }
++      }
++    },
++    plugins: { react, 'react-hooks': reactHooks, 'jsx-a11y': jsxA11y },
++    settings: { react: { version: 'detect' } },
++    rules: {
++      'no-console': ['warn', { allow: ['warn', 'error'] }],
++      'react/jsx-uses-react': 'off',
++      'react/react-in-jsx-scope': 'off',
++      ...reactHooks.configs.recommended.rules,
++      ...jsxA11y.configs.recommended.rules
++    }
++  }
++];
+diff --git a/src/utils/csv.ts b/src/utils/csv.ts
+new file mode 100644
+index 0000000..4444444
+--- /dev/null
++++ b/src/utils/csv.ts
+@@ -0,0 +1,174 @@
++export interface CsvParseOptions {
++  maxRows: number;
++  maxColumns: number;
++  maxCellLength: number;
++}
++
++const DEFAULT_LIMITS: CsvParseOptions = {
++  maxRows: 1_000_000,
++  maxColumns: 200,
++  maxCellLength: 32_768
++};
++
++// Excel/LibreOffice formula lead characters
++const FORMULA_LEAD = /^[=+\-@]/;
++
++// Escape quotes for CSV
++function escQuotes(s: string): string {
++  return `"${s.replace(/"/g, '""')}"`;
++}
++
++/**
++ * Neutralize CSV cell against formula execution.
++ * Strategy: strip user-added leading apostrophes, then if it starts with a formula char,
++ * prefix a single apostrophe (Excel text marker). No space (no artifact).
++ */
++export type CsvSanitizeMode = 'safe_apostrophe' | 'unsafe_preserve' | 'strip';
++
++export function neutralizeForCsvCell(raw: unknown, mode: CsvSanitizeMode = 'safe_apostrophe'): string {
++  const s0 = String(raw ?? '');
++  // Remove leading apostrophes inserted by users/tools so our prefixing is canonical
++  let s = s0;
++  while (s.startsWith("'")) s = s.slice(1);
++  if (!FORMULA_LEAD.test(s)) return s0; // not dangerous, preserve original
++  switch (mode) {
++    case 'unsafe_preserve':
++      return s0; // keep as-is (dangerous)
++    case 'strip':
++      return s.replace(FORMULA_LEAD, ''); // destructive but explicit
++    case 'safe_apostrophe':
++    default:
++      return `'${s}`; // Excel-safe, no visual space
++  }
++}
++
++export function rowsToCSV(header: string[], rows: any[][], mode: CsvSanitizeMode = 'safe_apostrophe'): string {
++  const encode = (v: unknown) => escQuotes(neutralizeForCsvCell(v, mode));
++  const lines: string[] = [];
++  lines.push(header.map(h => escQuotes(String(h ?? ''))).join(','));
++  for (const row of rows) {
++    lines.push(row.map(encode).join(','));
++  }
++  return lines.join('\n');
++}
++
++/**
++ * Small CSV parser with limits. Handles quotes/newlines, doubled quotes, commas.
++ * Not RFC-4180 complete but adequate for logs/telemetry CSV.
++ */
++export function parseCSV(text: string, limits: Partial<CsvParseOptions> = {}): (string|number|null|undefined)[][] {
++  const lim = { ...DEFAULT_LIMITS, ...limits };
++  // Strip a UTF-8 BOM if present to avoid polluting the first header cell
++  if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
++  const rows: string[][] = [];
++  let i = 0, cell = '', inQ = false, col = 0, rowCount = 0;
++  const pushCell = () => {
++    if (cell.length > lim.maxCellLength) throw new Error(`CSV cell too long (>${lim.maxCellLength})`);
++    (rows[rowCount] ||= [])[col++] = cell;
++    cell = '';
++  };
++  const pushRow = () => {
++    if (rows[rowCount].length > lim.maxColumns) throw new Error(`CSV has too many columns (>${lim.maxColumns})`);
++    rowCount++;
++    if (rowCount > lim.maxRows) throw new Error(`CSV has too many rows (>${lim.maxRows})`);
++    col = 0;
++  };
++  while (i < text.length) {
++    const ch = text[i++];
++    if (inQ) {
++      if (ch === '"') {
++        if (text[i] === '"') { cell += '"'; i++; }
++        else inQ = false;
++      } else {
++        cell += ch;
++      }
++    } else {
++      if (ch === '"') inQ = true;
++      else if (ch === ',') pushCell();
++      else if (ch === '\n') { pushCell(); pushRow(); }
++      else if (ch === '\r') {
++        if (text[i] === '\n') i++;
++        pushCell(); pushRow();
++      } else {
++        cell += ch;
++      }
++    }
++  }
++  // flush last cell/row
++  pushCell();
++  return rows;
++}
+diff --git a/src/utils/num.ts b/src/utils/num.ts
+new file mode 100644
+index 0000000..5555555
+--- /dev/null
++++ b/src/utils/num.ts
+@@ -0,0 +1,75 @@
++export function parseNumberLocaleAware(raw: string): number {
++  const s = String(raw ?? '').trim();
++  if (!s) return Number.NaN;
++  const hasComma = s.includes(',');
++  const hasDot = s.includes('.');
++  let numStr = s;
++  if (hasComma && hasDot) {
++    numStr = s.replace(/\./g, '').replace(/,/g, '.'); // EU: 1.234,56
++  } else if (hasComma && !hasDot) {
++    if (/^\d{1,3}(,\d{3})+(\,\d+)?$/.test(s)) numStr = s.replace(/,/g, ''); // US 1,234
++    else numStr = s.replace(',', '.'); // EU 1,2
++  }
++  const n = Number(numStr);
++  return Number.isFinite(n) ? n : Number.NaN;
++}
++
++const UNIT_RE = /^(-?[\d.,]+(?:[eE][+-]?\d+)?)\s*(kb|mb|gb|tb|ms|s|µs|us|ns|b|byte|bytes|%)$/i;
++
++export function parseWithUnit(u: unknown): number {
++  const raw = String(u ?? '').trim();
++  if (!raw) return Number.NaN;
++  const m = raw.match(UNIT_RE);
++  if (!m) return parseNumberLocaleAware(raw);
++  let numStr = m[1];
++  const unit = m[2].toLowerCase();
++  numStr = String(parseNumberLocaleAware(numStr));
++  const base = Number(numStr);
++  if (!Number.isFinite(base)) return Number.NaN;
++  const bin = { kb: 1024, mb: 1024 ** 2, gb: 1024 ** 3, tb: 1024 ** 4 };
++  const time = { ns: 1e-9, us: 1e-6, 'µs': 1e-6, ms: 1e-3, s: 1 };
++  const misc = { b: 1, byte: 1, bytes: 1, '%': 0.01 };
++  if (unit in bin) return base * (bin as any)[unit];
++  if (unit in time) return base * (time as any)[unit];
++  if (unit in misc) return base * (misc as any)[unit];
++  return base;
++}
+diff --git a/src/utils/sort.ts b/src/utils/sort.ts
+new file mode 100644
+index 0000000..6666666
+--- /dev/null
++++ b/src/utils/sort.ts
+@@ -0,0 +1,32 @@
++import { parseWithUnit } from './num';
++
++export type SortDir = 'asc' | 'desc';
++export interface SortKey { idx: number; dir: SortDir }
++
++export function withDir(cmp: number, dir: SortDir): number {
++  return dir === 'asc' ? cmp : -cmp;
++}
++
++export function smartCompare(a: unknown, b: unknown): number {
++  const as = String(a ?? '');
++  const bs = String(b ?? '');
++  const an = parseWithUnit(as);
++  const bn = parseWithUnit(bs);
++  const aNaN = Number.isNaN(an), bNaN = Number.isNaN(bn);
++  if (!aNaN || !bNaN) {
++    if (aNaN && bNaN) return 0;
++    if (aNaN) return 1;
++    if (bNaN) return -1;
++    return an - bn;
++  }
++  return as.localeCompare(bs, undefined, { sensitivity: 'base', numeric: true });
++}
+diff --git a/src/utils/url.ts b/src/utils/url.ts
+index feedbee..88dd001 100644
+--- a/src/utils/url.ts
++++ b/src/utils/url.ts
+@@ -1,22 +1,67 @@
+-import type { Theme, SortKey } from '../hooks/useTableState';
+-import type { TableState } from '../hooks/useTableState';
++import type { Theme } from '../hooks/useTableState';
++import type { TableState } from '../hooks/useTableState';
++import { decodeState } from './urlCompression';
+ 
+ export function getInitialStateFromURL(): Partial<TableState> {
+   const u = new URL(window.location.href);
+   const p = u.searchParams;
+   const st: Partial<TableState> = {};
+   const theme = p.get('theme'); if (theme === 'rose' || theme === 'veil') st.theme = theme as Theme;
+   const csv = p.get('csv'); if (csv) st.csvPath = csv;
+   const q = p.get('q'); if (q) st.search = q;
+   st.wrap = p.get('wrap') === '1';
+   st.paging = p.get('paging') !== '0';
+   const page = Number(p.get('page')); if (Number.isFinite(page) && page >= 1) st.page = Math.floor(page);
+   const ps = Number(p.get('ps')); if ([25,50,100,250].includes(ps)) st.pageSize = ps;
+   st.autoRefresh = p.get('ar') === '1';
+   const rs = Number(p.get('rs')); if (Number.isFinite(rs)) st.refreshSec = Math.max(5, Math.min(3600, Math.floor(rs)));
++
++  // tags: prefer repeated ?tag=… params; fallback to legacy tags=csv
++  const stripControls = (s: string) => s.replace(/[\x00-\x1F\x7F]/g, '').trim();
++  const tagParams = p.getAll('tag');
++  if (tagParams.length) {
++    st.selectedTags = new Set(
++      tagParams.map(t => { try { return stripControls(decodeURIComponent(t)); } catch { return stripControls(t); } })
++      .filter(Boolean)
++    );
++  } else {
++    const tagsCsv = p.get('tags');
++    if (tagsCsv) {
++      st.selectedTags = new Set(tagsCsv.split(',').map(stripControls).filter(Boolean));
++    }
++  }
++
++  const hide = p.get('hide');
++  if (hide) {
++    const items = hide.split(',').map(x => parseInt(x, 10)).filter(n => Number.isInteger(n) && n >= 0);
++    st.hiddenCols = new Set(items);
++  }
++
++  const sort = p.get('sort');
++  if (sort) {
++    st.sortKeys = sort.split(',').map(s => {
++      const [i, d] = s.split(':');
++      const idx = parseInt(i, 10);
++      const dir = d === 'desc' ? 'desc' : 'asc';
++      return { idx, dir };
++    }).filter(k => Number.isInteger(k.idx));
++  }
++
++  // Hash-compressed fallback: only fill fields missing from query params
++  if (u.hash.startsWith('#s=')) {
++    try {
++      const dec = decodeState(u.hash.slice(3));
++      if (dec && typeof dec === 'object') {
++        if ((!st.csvPath || st.csvPath === '') && typeof dec.csvPath === 'string') st.csvPath = dec.csvPath;
++        if (!('search' in st) && typeof dec.search === 'string') st.search = dec.search;
++        if (!('selectedTags' in st) && Array.isArray(dec.selectedTags)) st.selectedTags = new Set(dec.selectedTags.map(stripControls));
++        if (!('hiddenCols' in st) && Array.isArray(dec.hiddenCols)) st.hiddenCols = new Set(dec.hiddenCols.map(Number).filter(n => Number.isInteger(n)));
++        if (!('sortKeys' in st) && Array.isArray(dec.sortKeys)) st.sortKeys = dec.sortKeys;
++      }
++    } catch {}
++  }
+   return st;
+ }
+ 
+ export function buildUrlFromState(state: TableState): string {
+-  const p = new URLSearchParams();
++  const p = new URLSearchParams();
+   if (state.theme) p.set('theme', state.theme);
+   if (state.csvPath) p.set('csv', state.csvPath);
+   if (state.search) p.set('q', state.search);
+@@ -26,6 +71,9 @@ export function buildUrlFromState(state: TableState): string {
+   if (state.autoRefresh) p.set('ar', '1');
+   if (state.refreshSec !== 30) p.set('rs', String(state.refreshSec));
+   // Use repeated 'tag' params to avoid ambiguity when tags contain commas
+   if (state.selectedTags?.size) [...state.selectedTags].sort().forEach(t => p.append('tag', t));
+   if (state.hiddenCols?.size) p.set('hide', [...state.hiddenCols].sort((a,b)=>a-b).join(','));
+   if (state.sortKeys?.length) p.set('sort', state.sortKeys.map(k => `${k.idx}:${k.dir}`).join(','));
+   const qs = p.toString();
+   const base = window.location.pathname;
+   return qs ? `${base}?${qs}` : base;
+ }
+diff --git a/src/utils/urlCompression.ts b/src/utils/urlCompression.ts
+new file mode 100644
+index 0000000..7777777
+--- /dev/null
++++ b/src/utils/urlCompression.ts
+@@ -0,0 +1,17 @@
++import { compressToEncodedURIComponent as enc, decompressFromEncodedURIComponent as dec } from 'lz-string';
++
++export function encodeState(o: unknown): string | null {
++  try { return enc(JSON.stringify(o)); } catch { return null; }
++}
++
++export function decodeState(s: string): any | null {
++  try {
++    const r = dec(s);
++    return r ? JSON.parse(r) : null;
++  } catch {
++    return null;
++  }
++}
++
++export function parseSortKeys(v: string) {
++  return v.split(',').map(s => { const [i, d] = s.split(':'); return { idx: parseInt(i, 10), dir: d === 'desc' ? 'desc' : 'asc' as const }; }).filter(k => Number.isInteger(k.idx)); }
+diff --git a/src/utils/parseOffThread.ts b/src/utils/parseOffThread.ts
+new file mode 100644
+index 0000000..aaaaaaa
+--- /dev/null
++++ b/src/utils/parseOffThread.ts
+@@ -0,0 +1,45 @@
++// Worker-based CSV parsing using ArrayBuffer transfer with timeout & robust errors
++export async function parseCSVOffThread(buf: ArrayBuffer): Promise<string[][]> {
++  // Guard BEFORE importing/instantiating the worker
++  if (typeof window === 'undefined' || !('Worker' in window)) {
++    throw new Error('Web Workers are not supported in this environment.');
++  }
++  // @ts-ignore Vite worker import
++  const W = (await import('../workers/csvWorker.ts?worker')).default;
++  const worker = new W();
++  return new Promise((resolve, reject) => {
++    const timer = window.setTimeout(() => {
++      try { worker.terminate?.(); } catch {}
++      reject(new Error('Worker timeout'));
++    }, 30_000);
++    worker.onmessage = ({ data }: MessageEvent<any>) => {
++      window.clearTimeout(timer);
++      try { worker.terminate?.(); } catch {}
++      if (data?.ok) resolve(data.rows);
++      else reject(new Error(data?.error || 'Worker parse failed'));
++    };
++    worker.onerror = (err: any) => {
++      window.clearTimeout(timer);
++      try { worker.terminate?.(); } catch {}
++      reject(err instanceof Error ? err : new Error(String(err)));
++    };
++    try {
++      // Transfer ownership (buf becomes detached)
++      worker.postMessage({ buf }, [buf]);
++    } catch (err) {
++      window.clearTimeout(timer);
++      try { worker.terminate?.(); } catch {}
++      reject(err instanceof Error ? err : new Error(String(err)));
++    }
++  });
++}
+diff --git a/src/workers/csvWorker.ts b/src/workers/csvWorker.ts
+new file mode 100644
+index 0000000..bbbbbbb
+--- /dev/null
++++ b/src/workers/csvWorker.ts
+@@ -0,0 +1,30 @@
++/// <reference lib="webworker" />
++import { parseCSV } from '../utils/csv';
++
++self.onmessage = (e: MessageEvent<{ buf?: ArrayBuffer }>) => {
++  try {
++    if (!(e.data && e.data.buf instanceof ArrayBuffer)) {
++      (self as any).postMessage({ ok: false, error: 'Invalid buffer type' });
++      return;
++    }
++    if (e.data.buf.byteLength === 0) {
++      (self as any).postMessage({ ok: false, error: 'Empty buffer' });
++      return;
++    }
++    const text = new TextDecoder('utf-8', { fatal: true }).decode(e.data.buf);
++    const rows = parseCSV(text, {
++      maxRows: 1_000_000,
++      maxColumns: 200,
++      maxCellLength: 32_768
++    });
++    (self as any).postMessage({ ok: true, rows });
++  } catch (err: any) {
++    (self as any).postMessage({ ok: false, error: String(err?.message || err) });
++  }
++};
+diff --git a/src/AppRefactored.tsx b/src/AppRefactored.tsx
+index c0ffee1..cafebee 100644
+--- a/src/AppRefactored.tsx
++++ b/src/AppRefactored.tsx
+@@ -1,10 +1,12 @@
+ import React, { useCallback, useEffect, useRef } from 'react';
+ import { useTableState } from './hooks/useTableState';
+ import { DataTable } from './components/DataTable';
+ import { MiniCharts } from './components/MiniCharts';
+ import { SkeletonLoader } from './components/SkeletonLoader';
+ import { ErrorBoundary } from './components/ErrorBoundary';
+ 
+ import { getInitialStateFromURL, buildUrlFromState } from './utils/url';
+ import { replaceUrlDebounced } from './utils/urlDebounce';
+ import { parseCSVOffThread } from './utils/parseOffThread';
+ 
+@@ -70,6 +72,7 @@ export default function AppRefactored() {
+     const reader = res.body?.getReader();
+     if (!reader) throw new Error('No readable stream');
+ 
++    // Heartbeat/timeout
+     let lastActivity = Date.now();
+     const heartbeat = window.setInterval(() => {
+       if (Date.now() - lastActivity > 30_000) {
+@@ -110,7 +113,9 @@ export default function AppRefactored() {
+     } finally {
+       try { reader?.releaseLock?.(); } catch {}
+       (res.body as any)?.cancel?.().catch?.(() => {});
+-      // no ctl.abort() here; we only abort on timeout/size
++      if (heartbeat) window.clearInterval(heartbeat);
++      // (controller abort happens only on timeout/size; don't abort in finally)
+     }
+   }, [state.csvPath, dispatch]);
+ 
+@@ -146,7 +151,9 @@ export default function AppRefactored() {
+ 
+   return (
+     <ErrorBoundary>
+-      {state.loading ? <SkeletonLoader /> : <DataTable />}
++      {state.loading ? <SkeletonLoader /> : <DataTable />}
+       <MiniCharts />
+     </ErrorBoundary>
+   );
+ }
+diff --git a/src/utils/urlDebounce.ts b/src/utils/urlDebounce.ts
+new file mode 100644
+index 0000000..eeeeeee
+--- /dev/null
++++ b/src/utils/urlDebounce.ts
+@@ -0,0 +1,17 @@
++let t: number | undefined;
++export function replaceUrlDebounced(url: string, ms = 120) {
++  try {
++    if (t) window.clearTimeout(t);
++    t = window.setTimeout(() => {
++      window.history.replaceState(null, '', url);
++    }, ms);
++  } catch {}
++}
+diff --git a/tests/csv.limits.test.ts b/tests/csv.limits.test.ts
+new file mode 100644
+index 0000000..1212121
+--- /dev/null
++++ b/tests/csv.limits.test.ts
+@@ -0,0 +1,35 @@
++import { describe, it, expect } from 'vitest';
++import { parseCSV, type CsvParseOptions } from '../src/utils/csv';
++
++const LIMITS: CsvParseOptions = {
++  maxRows: 3,
++  maxColumns: 3,
++  maxCellLength: 8
++};
++
++describe('CSV parse limits', () => {
++  it('throws when a cell exceeds maxCellLength', () => {
++    const long = `"${'x'.repeat(LIMITS.maxCellLength + 1)}"`;
++    expect(() => parseCSV(long, LIMITS)).toThrow(/cell too long|too long/i);
++  });
++
++  it('throws when column count exceeds maxColumns', () => {
++    const row = Array(LIMITS.maxColumns + 1).fill('x').join(',');
++    expect(() => parseCSV(row, LIMITS)).toThrow(/too many columns|columns/i);
++  });
++
++  it('throws when row count exceeds maxRows', () => {
++    const rows = Array(LIMITS.maxRows + 1).fill('1,2,3').join('\n');
++    expect(() => parseCSV(rows, LIMITS)).toThrow(/too many rows|rows/i);
++  });
++
++  it('parses fine when within limits', () => {
++    const ok = 'a,b,c\n1,2,3';
++    const out = parseCSV(ok, LIMITS);
++    expect(out.length).toBe(2);
++    expect(out[0].length).toBe(3);
++  });
++});
+diff --git a/tests/worker.timeout.test.ts b/tests/worker.timeout.test.ts
+new file mode 100644
+index 0000000..1313131
+--- /dev/null
++++ b/tests/worker.timeout.test.ts
+@@ -0,0 +1,39 @@
++import { describe, it, expect, vi } from 'vitest';
++import { parseCSVOffThread } from '../src/utils/parseOffThread';
++
++// Ensure env says "Workers supported"
++// eslint-disable-next-line @typescript-eslint/no-explicit-any
++(globalThis as any).window ??= globalThis as any;
++// eslint-disable-next-line @typescript-eslint/no-explicit-any
++(window as any).Worker = (function Fake() {}) as unknown as typeof Worker;
++
++// Mock the Vite worker import to a no-op worker that never responds (forces timeout)
++vi.mock('/src/workers/csvWorker.ts?worker', () => {
++  class SilentWorker {
++    onmessage: any = null;
++    onerror: any = null;
++    postMessage(_msg: any) { /* no-op */ }
++    terminate() { /* no-op */ }
++  }
++  return { default: SilentWorker };
++});
++
++describe('parseCSVOffThread worker timeout', () => {
++  it('rejects with a timeout error when the worker never responds', async () => {
++    vi.useFakeTimers();
++    try {
++      const buf = new TextEncoder().encode('a,b\n1,2').buffer;
++      const p = parseCSVOffThread(buf);
++      await vi.advanceTimersByTimeAsync(30_000);
++      await expect(p).rejects.toThrow(/timeout/i);
++    } finally {
++      vi.useRealTimers();
++    }
++  });
++});
+diff --git a/tests/worker.error.test.ts b/tests/worker.error.test.ts
+new file mode 100644
+index 0000000..1414141
+--- /dev/null
++++ b/tests/worker.error.test.ts
+@@ -0,0 +1,45 @@
++import { describe, it, expect, vi } from 'vitest';
++import { parseCSVOffThread } from '../src/utils/parseOffThread';
++
++// Ensure environment says "Workers supported"
++// eslint-disable-next-line @typescript-eslint/no-explicit-any
++(globalThis as any).window ??= globalThis as any;
++// eslint-disable-next-line @typescript-eslint/no-explicit-any
++(window as any).Worker = (function Fake() {}) as unknown as typeof Worker;
++
++// Mock the worker to immediately fail (return an error in onmessage)
++const MOCK_ERROR_MESSAGE = 'Data integrity check failed in worker.';
++
++vi.mock('/src/workers/csvWorker.ts?worker', () => {
++  class FailingWorker {
++    onmessage: any = null;
++    onerror: any = null;
++    postMessage() {
++      if (this.onmessage) {
++        this.onmessage({ data: { ok: false, error: MOCK_ERROR_MESSAGE } });
++      }
++    }
++    terminate() { /* no-op */ }
++  }
++  return { default: FailingWorker };
++});
++
++describe('parseCSVOffThread error path', () => {
++  it('rejects with the worker error message when parsing fails', async () => {
++    const buf = new TextEncoder().encode('bad,data').buffer;
++    const p = parseCSVOffThread(buf);
++    await expect(p).rejects.toThrow(MOCK_ERROR_MESSAGE);
++  });
++
++  it('clears the timeout even on immediate rejection', async () => {
++    const clearTimeoutSpy = vi.spyOn(window, 'clearTimeout');
++    const buf = new TextEncoder().encode('bad,data').buffer;
++    await expect(parseCSVOffThread(buf)).rejects.toThrow();
++    expect(clearTimeoutSpy).toHaveBeenCalled();
++  });
++});
+diff --git a/tests/sort.numeric.test.ts b/tests/sort.numeric.test.ts
+new file mode 100644
+index 0000000..1515151
+--- /dev/null
++++ b/tests/sort.numeric.test.ts
+@@ -0,0 +1,33 @@
++import { describe, it, expect } from 'vitest';
++import { smartCompare } from '../src/utils/sort';
++
++function sortAsc(a: string[]) {
++  return [...a].sort((x, y) => smartCompare(x, y));
++}
++function sortDesc(a: string[]) {
++  return [...a].sort((x, y) => -smartCompare(x, y));
++}
++
++describe('numeric sort with units & NaN handling', () => {
++  it('sorts with unit-aware semantics', () => {
++    const values = ['5kb', '5mb', '512kb', '1 gb', '750 mb'];
++    const asc = sortAsc(values);
++    expect(asc[0]).toBe('5kb'); // smallest
++    expect(asc[asc.length - 1]).toBe('1 gb'); // largest
++  });
++
++  it('puts NaN-like values last in both directions', () => {
++    const values = ['10', 'abc', '—', '5', 'x'];
++    const asc = sortAsc(values);
++    expect(asc.slice(-3)).toEqual(expect.arrayContaining(['abc', '—', 'x']));
++    const desc = sortDesc(values);
++    expect(desc.slice(-3)).toEqual(expect.arrayContaining(['abc', '—', 'x']));
++  });
++});

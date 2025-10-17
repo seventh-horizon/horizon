@@ -1,0 +1,25 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "node-terminal",
+      "request": "launch",
+      "name": "Vite dev server",
+      "command": "npm run dev:horizon",
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "pwa-chrome",
+      "request": "launch",
+      "name": "Open in Chrome",
+      "url": "http://localhost:5173/horizon/",
+      "webRoot": "${workspaceFolder}"
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Dev + Chrome",
+      "configurations": ["Vite dev server", "Open in Chrome"]
+    }
+  ]
+}

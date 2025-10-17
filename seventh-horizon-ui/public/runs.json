@@ -1,0 +1,4 @@
+[
+  { "name": "Latest Analysis Run", "path": "/runs/latest/telemetry.csv" },
+  { "name": "Training Run (Alpha)", "path": "/runs/alpha-training/telemetry.csv" }
+]

@@ -1,42 +1,4 @@
-RunID,UTC,Tags,CWD,GitBranch,GitCommit,Python
-epoch_20251014T120157Z,2025-10-14T12:01:57Z,mode=pipeline,task=all,/Users/kalebkirby/horizon,main,f44a4c5,Python 3.11.1
-run_run_run_run_run_run_run_run_run_run_run_run_run_run_run_run_run_run_run_run_run_20251014135455,2025-10-14T13:54:55Z,mode=pipeline task=demo step=1,/Users/kalebkirby/horizon,main,deadbeef,Python 3.11.1
-run_20251014135456,2025-10-14T13:54:56Z,mode=pipeline task=demo step=2,/Users/kalebkirby/horizon,main,deadbeef,Python 3.11.1
-run_20251014135457,2025-10-14T13:54:57Z,mode=pipeline task=demo step=3,/Users/kalebkirby/horizon,main,deadbeef,Python 3.11.1
-run_20251014135458,2025-10-14T13:54:58Z,mode=pipeline task=demo step=4,/Users/kalebkirby/horizon,main,deadbeef,Python 3.11.1
-run_20251014135459,2025-10-14T13:54:59Z,mode=pipeline task=demo step=5,/Users/kalebkirby/horizon,main,deadbeef,Python 3.11.1
-run_20251014135500,2025-10-14T13:55:00Z,mode=pipeline task=demo step=6,/Users/kalebkirby/horizon,main,deadbeef,Python 3.11.1
-run_20251014135501,2025-10-14T13:55:01Z,mode=pipeline task=demo step=7,/Users/kalebkirby/horizon,main,deadbeef,Python 3.11.1
-run_20251014135502,2025-10-14T13:55:02Z,mode=pipeline task=demo step=8,/Users/kalebkirby/horizon,main,deadbeef,Python 3.11.1
-run_20251014135503,2025-10-14T13:55:03Z,mode=pipeline task=demo step=9,/Users/kalebkirby/horizon,main,deadbeef,Python 3.11.1
-run_20251014135504,2025-10-14T13:55:04Z,mode=pipeline task=demo step=10,/Users/kalebkirby/horizon,main,deadbeef,Python 3.11.1
-run_20251014135505,2025-10-14T13:55:05Z,mode=pipeline task=demo step=11,/Users/kalebkirby/horizon,main,deadbeef,Python 3.11.1
-run_20251014135506,2025-10-14T13:55:06Z,mode=pipeline task=demo step=12,/Users/kalebkirby/horizon,main,deadbeef,Python 3.11.1
-run_20251014135507,2025-10-14T13:55:07Z,mode=pipeline task=demo step=13,/Users/kalebkirby/horizon,main,deadbeef,Python 3.11.1
-run_20251014135508,2025-10-14T13:55:08Z,mode=pipeline task=demo step=14,/Users/kalebkirby/horizon,main,deadbeef,Python 3.11.1
-run_20251014135509,2025-10-14T13:55:09Z,mode=pipeline task=demo step=15,/Users/kalebkirby/horizon,main,deadbeef,Python 3.11.1
-run_20251014135510,2025-10-14T13:55:10Z,mode=pipeline task=demo step=16,/Users/kalebkirby/horizon,main,deadbeef,Python 3.11.1
-run_20251014135511,2025-10-14T13:55:11Z,mode=pipeline task=demo step=17,/Users/kalebkirby/horizon,main,deadbeef,Python 3.11.1
-run_20251014135512,2025-10-14T13:55:12Z,mode=pipeline task=demo step=18,/Users/kalebkirby/horizon,main,deadbeef,Python 3.11.1
-run_20251014135513,2025-10-14T13:55:13Z,mode=pipeline task=demo step=19,/Users/kalebkirby/horizon,main,deadbeef,Python 3.11.1
-run_20251014135514,2025-10-14T13:55:14Z,mode=pipeline task=demo step=20,/Users/kalebkirby/horizon,main,deadbeef,Python 3.11.1
-run_1760450137,2025-10-14T13:55:37Z,mode=pipeline task=demo step=1,/Users/kalebkirby/horizon,main,deadbeef,Python 3.11.1
-run_1760450138,2025-10-14T13:55:38Z,mode=pipeline task=demo step=2,/Users/kalebkirby/horizon,main,deadbeef,Python 3.11.1
-run_1760450139,2025-10-14T13:55:39Z,mode=pipeline task=demo step=3,/Users/kalebkirby/horizon,main,deadbeef,Python 3.11.1
-run_1760450140,2025-10-14T13:55:40Z,mode=pipeline task=demo step=4,/Users/kalebkirby/horizon,main,deadbeef,Python 3.11.1
-run_1760450141,2025-10-14T13:55:41Z,mode=pipeline task=demo step=5,/Users/kalebkirby/horizon,main,deadbeef,Python 3.11.1
-run_1760450142,2025-10-14T13:55:42Z,mode=pipeline task=demo step=6,/Users/kalebkirby/horizon,main,deadbeef,Python 3.11.1
-run_1760450143,2025-10-14T13:55:43Z,mode=pipeline task=demo step=7,/Users/kalebkirby/horizon,main,deadbeef,Python 3.11.1
-run_1760450144,2025-10-14T13:55:44Z,mode=pipeline task=demo step=8,/Users/kalebkirby/horizon,main,deadbeef,Python 3.11.1
-run_1760450145,2025-10-14T13:55:45Z,mode=pipeline task=demo step=9,/Users/kalebkirby/horizon,main,deadbeef,Python 3.11.1
-run_1760450146,2025-10-14T13:55:46Z,mode=pipeline task=demo step=10,/Users/kalebkirby/horizon,main,deadbeef,Python 3.11.1
-run_1760450147,2025-10-14T13:55:47Z,mode=pipeline task=demo step=11,/Users/kalebkirby/horizon,main,deadbeef,Python 3.11.1
-run_1760450148,2025-10-14T13:55:48Z,mode=pipeline task=demo step=12,/Users/kalebkirby/horizon,main,deadbeef,Python 3.11.1
-run_1760450149,2025-10-14T13:55:49Z,mode=pipeline task=demo step=13,/Users/kalebkirby/horizon,main,deadbeef,Python 3.11.1
-run_1760450150,2025-10-14T13:55:50Z,mode=pipeline task=demo step=14,/Users/kalebkirby/horizon,main,deadbeef,Python 3.11.1
-run_1760450151,2025-10-14T13:55:51Z,mode=pipeline task=demo step=15,/Users/kalebkirby/horizon,main,deadbeef,Python 3.11.1
-run_1760450152,2025-10-14T13:55:52Z,mode=pipeline task=demo step=16,/Users/kalebkirby/horizon,main,deadbeef,Python 3.11.1
-run_1760450153,2025-10-14T13:55:53Z,mode=pipeline task=demo step=17,/Users/kalebkirby/horizon,main,deadbeef,Python 3.11.1
-run_1760450154,2025-10-14T13:55:54Z,mode=pipeline task=demo step=18,/Users/kalebkirby/horizon,main,deadbeef,Python 3.11.1
-run_1760450155,2025-10-14T13:55:55Z,mode=pipeline task=demo step=19,/Users/kalebkirby/horizon,main,deadbeef,Python 3.11.1
-run_1760450156,2025-10-14T13:55:56Z,mode=pipeline task=demo step=20,/Users/kalebkirby/horizon,main,deadbeef,Python 3.11.1
+utc,tags,run_id,mode,step,duration_ms
+2025-10-16T04:58:00Z,"train;alpha",r-001,analysis,1,120
+2025-10-16T05:10:00Z,"eval;beta",r-002,pipeline,2,95
+2025-10-16T05:25:00Z,"train;beta",r-003,analysis,3,210

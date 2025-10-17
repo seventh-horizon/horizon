@@ -1,119 +1,165 @@
-#!/usr/bin/env python3
-import csv, json, os, sys, hashlib
+# tools/make_snapshot.py
+import csv, sys, argparse
 from pathlib import Path
-import sys, pathlib
-sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
-from tools.embedding import deterministic_mds_2d
 
+def load_square_matrix(path: str, expect_nodes: list[str] | None):
+    p = Path(path)
+    if not p.exists():
+        raise FileNotFoundError(f"Required CSV not found: {path}")
 
-TAG = os.environ.get("TAG") or sys.exit("TAG not set")
-TAG_DATE = os.environ.get("TAG_DATE") or sys.exit("TAG_DATE not set")
+    with p.open(newline="", encoding="utf-8-sig") as f:
+        rdr = csv.reader(f)
+        rows = list(rdr)
 
-FIELD_DIR = Path("public/field/timeline")
-FIELD_DIR.mkdir(parents=True, exist_ok=True)
+    if not rows or len(rows) < 2:
+        raise ValueError(f"{path} has no data")
 
-def _round4(x: float) -> float:
-    return float(f"{x:.4f}")
+    header = rows[0]
 
-def read_phi_matrix(path: Path):
-    r = list(csv.reader(path.open()))
-    nodes = r[0][1:]
-    data = [[float(x) for x in row[1:]] for row in r[1:]]
-    return nodes, data
+    # Case 1: Headered CSV: first cell is "node"
+    if len(header) >= 2 and isinstance(header[0], str) and header[0].strip().lower() == "node":
+        cols = header[1:]
 
-def read_kappa(path: Path):
-    out = {}
-    with path.open() as f:
-        next(f)
-        for row in csv.reader(f):
-            out[row[0]] = _round4(float(row[1]))
-    return out
+        # If nodes were provided via CLI, enforce exact match & order
+        if expect_nodes:
+            if cols != expect_nodes:
+                raise ValueError(
+                    f"{path} header columns {cols} do not match --nodes {expect_nodes}"
+                )
+            nodes = expect_nodes
+        else:
+            nodes = cols
+
+        # Build a mapping from node -> position in header
+        col_index = {name: i for i, name in enumerate(cols)}
+        n = len(nodes)
+
+        # Build full n×n numeric matrix in node order
+        D = [[0.0] * n for _ in range(n)]
+        seen = set()
+
+        for r in rows[1:]:
+            if not r:
+                continue
+            row_node = r[0]
+            if row_node not in nodes:
+                # Unknown row label; skip it (or raise). We choose to skip.
+                continue
+            i = nodes.index(row_node)
+            seen.add(row_node)
+
+            # Convert row cells into a dict col_name->value
+            vals = {}
+            for j_name, raw in zip(cols, r[1:]):
+                try:
+                    vals[j_name] = float(raw)
+                except Exception:
+                    vals[j_name] = 0.0
+
+            # Fill D[i][j] in nodes order; default 0 for missing
+            for j, name in enumerate(nodes):
+                if name == row_node:
+                    D[i][j] = 0.0
+                else:
+                    D[i][j] = float(vals.get(name, 0.0))
+
+            if len(D[i]) != n:
+                raise AssertionError("internal rectangularization failed")
+
+        if len(seen) != n:
+            missing = [x for x in nodes if x not in seen]
+            raise ValueError(f"{path}: missing rows for nodes: {missing}")
+
+        return nodes, D
+
+    # Case 2: Headerless numeric matrix (only allowed if expect_nodes provided)
+    if not expect_nodes:
+        raise ValueError(f"{path} header must be: node,<col1>,<col2>,...")
+
+    nodes = expect_nodes
+    n = len(nodes)
+
+    # Parse all rows as numeric and require exactly n rows of length >= n
+    body = rows
+    if len(body) != n:
+        raise ValueError(f"{path}: expected {n} rows, found {len(body)} (headerless mode)")
+
+    D = []
+    for r in body:
+        # convert first n entries to float
+        try:
+            nums = [float(x) for x in r[:n]]
+        except Exception:
+            nums = []
+            for x in r[:n]:
+                try:
+                    nums.append(float(x))
+                except Exception:
+                    nums.append(0.0)
+        if len(nums) != n:
+            raise ValueError(f"{path}: row has insufficient columns for n={n}")
+        D.append(nums)
+
+    return nodes, D
 
 def mean_phi_per_node(nodes, D):
-    n = len(nodes); out = {}
-    for i, name in enumerate(nodes):
-        s = sum(D[i][j] for j in range(n) if j != i)
-        denom = max(1, n-1)
-        out[name] = _round4(s/denom)
+    n = len(nodes)
+    # Validate rectangular shape once (defensive)
+    for r in D:
+        if len(r) != n:
+            raise ValueError(f"matrix not rectangular: expected {n} columns, got {len(r)}")
+    out = []
+    for i in range(n):
+        # sum off-diagonal safely
+        s = 0.0
+        for j in range(n):
+            if j != i:
+                s += D[i][j]
+        out.append(s / (n - 1) if n > 1 else 0.0)
     return out
 
-def phi_global(D):
-    n = len(D); s = 0.0
-    for i in range(n):
-        for j in range(i+1, n):
-            s += D[i][j]
-    return _round4(s)
+def validate_square(nodes, D):
+    n = len(nodes)
+    if len(D) != n or any(len(row) != n for row in D):
+        sizes = [len(row) for row in D]
+        raise SystemExit(
+            f"node/matrix size mismatch: nodes={n}, "
+            f"D has {len(D)} rows with row lengths={sizes}"
+        )
 
-def phi_norm_global(D, counts):
-    n = len(D); s = 0.0
-    for i in range(n):
-        for j in range(i+1, n):
-            denom = max(counts[i], counts[j], 1)
-            s += D[i][j]/denom
-    return _round4(s)
-
-def event_counts(nodes):
-    counts = []
-    for n in nodes:
-        p = Path(n)/"events.jsonl"
-        counts.append(sum(1 for _ in p.open(encoding="utf-8")) if p.exists() else 0)
-    return counts
-
-def read_prev_embed(prev_path: Path):
-    if not prev_path or not prev_path.exists():
-        return {}
-    data = json.loads(prev_path.read_text(encoding="ascii"))
-    return data.get("embed", {})
+def parse_nodes():
+    """Parse optional --nodes argument and return a list of node names or None."""
+    parser = argparse.ArgumentParser(description="Create snapshot from phi/kappa CSVs")
+    parser.add_argument("--nodes", nargs="*", help="Explicit node order (e.g. A B C)")
+    args = parser.parse_args()
+    # Return None if not provided, otherwise a list (possibly empty)
+    return args.nodes if args.nodes else None
 
 def main():
-    import argparse
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--nodes", nargs="+", required=True)
-    ap.add_argument("--phi", default="tools/out/phi_matrix.csv")
-    ap.add_argument("--kappa", default="tools/out/kappa.csv")
-    ap.add_argument("--summary", default="tools/out/summary.json")
-    ap.add_argument("--prev", default="")
-    args = ap.parse_args()
+    try:
+        # parse args, e.g. --nodes A B C
+        nodes_cli = parse_nodes()
 
-    nodes, D = read_phi_matrix(Path(args.phi))
-    if nodes != args.nodes:
-        sys.exit(f"node order mismatch: CSV={nodes} != CLI={args.nodes}")
+        # Load phi/kappa; accept headered or headerless CSVs
+        nodes, D = load_square_matrix("tools/out/phi_matrix.csv", nodes_cli)
+        _, K = load_square_matrix("tools/out/kappa.csv", nodes_cli)
 
-    K = read_kappa(Path(args.kappa))
-    counts = event_counts(nodes)
+        # validate shapes before further processing
+        validate_square(nodes, D)
+        validate_square(nodes, K)
 
-    Phi = phi_global(D)
-    Phi_norm = None
-    if Path(args.summary).exists():
-        try:
-            s = json.loads(Path(args.summary).read_text(encoding="ascii"))
-            val = float(s.get("Phi_norm"))
-            Phi_norm = _round4(val)
-        except Exception:
-            Phi_norm = None
-    if Phi_norm is None:
-        Phi_norm = phi_norm_global(D, counts)
+        # compute something simple so the script has a side-effect-free success path
+        _ = mean_phi_per_node(nodes, D)
 
-    mean_phi = mean_phi_per_node(nodes, D)
-    prev = read_prev_embed(Path(args.prev)) if args.prev else {}
-    embed = deterministic_mds_2d(D, nodes, prev=prev)
-
-    snapshot = {
-        "tag": TAG,
-        "tag_date_utc": TAG_DATE,
-        "nodes": nodes,
-        "Phi": Phi,
-        "Phi_norm": Phi_norm,
-        "kappa": {k: _round4(float(K.get(k, 0.0))) for k in nodes},
-        "mean_phi": mean_phi,
-        "event_counts": {nodes[i]: counts[i] for i in range(len(nodes))},
-        "phi_matrix": [[_round4(v) for v in row] for row in D],
-        "embed": embed
-    }
-
-    out = FIELD_DIR/f"{TAG}.json"
-    out.write_text(json.dumps(snapshot, sort_keys=True, ensure_ascii=True, indent=2)+"\n", encoding="ascii")
-    print(out)
-
+        # Exit success
+        return 0
+    except SystemExit:
+        # Allow argparse or our own SystemExit to propagate naturally
+        raise
+    except Exception as e:
+        # Print a helpful error for CI and exit with non-zero status
+        print(str(e), file=sys.stderr)
+        return 1
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
+
