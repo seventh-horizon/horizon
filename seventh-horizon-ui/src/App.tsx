@@ -66,7 +66,7 @@ function App() {
   const [showColsModal, setShowColsModal] = useState<boolean>(false);
 
   // Drawer state for filters sidebar
-  const [drawerOpen, setDrawerOpen] = useState<boolean>(true);
+  const [drawerOpen, setDrawerOpen] = useState<boolean>(false);
 
   // Schema warnings
   const REQUIRED_COLS = ['RunID', 'UTC', 'Tags', 'CWD', 'GitBranch', 'GitCommit', 'Python'];
