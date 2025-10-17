@@ -8,7 +8,7 @@ test('toolbar Filters button opens the drawer', async ({ page }) => {
   await page.goto('/');
 
   // Find the drawer opener by stable data-test hook
-  const opener = page.locator('[data-test="open-drawer"]');
+  const opener = page.getByTitle('Open filters drawer');
   await expect(opener).toBeVisible();
   await opener.click();
 

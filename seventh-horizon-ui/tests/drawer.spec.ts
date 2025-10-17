@@ -21,6 +21,7 @@ test('drawer toggles open/close from toolbar', async ({ page }) => {
   }
 
   await opener.click();
+  await page.waitForSelector('[data-test="drawer"]', { state: 'visible', timeout: 3000 });
 
   const drawer = page.locator('[data-test="drawer"]');
   // Ensure only one drawer is visible to prevent multiple drawers from overlapping and causing UI issues

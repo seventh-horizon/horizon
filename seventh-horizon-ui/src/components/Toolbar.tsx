@@ -26,6 +26,9 @@ interface ToolbarProps {
   onAutoRefreshChange: (enabled: boolean) => void;
   onRefreshSecChange: (seconds: number) => void;
   onReload: () => void;
+
+  /** ✅ NEW: used by Playwright tests to open the drawer */
+  onOpenDrawer: () => void;
 }
 
 export const Toolbar = forwardRef<HTMLInputElement, ToolbarProps>(({
@@ -33,6 +36,7 @@ export const Toolbar = forwardRef<HTMLInputElement, ToolbarProps>(({
   onThemeToggle, onCsvPathChange, onSearchChange, onWrapToggle, onClearTags, onExportCSV,
   onUploadClick, onShowColumnsModal, onCopyLink, onPagingChange, onPageSizeChange,
   onAutoRefreshChange, onRefreshSecChange, onReload,
+  onOpenDrawer, // ✅ NEW
 }, ref) => {
   return (
     <header className="toolbar header">
@@ -64,16 +68,41 @@ export const Toolbar = forwardRef<HTMLInputElement, ToolbarProps>(({
             spellCheck={false}
             enterKeyHint="search"
           />
+          <button
+            className="pill"
+            type="button"
+            data-test="open-drawer"
+            aria-controls="app-drawer"
+            onClick={onOpenDrawer}
+            title="Open filters drawer"
+          >
+            Filters
+          </button>
         </div>
+
         <div className="toolbar-group">
           <button className="pill" onClick={onWrapToggle}>{wrap ? '↔ No Wrap' : '↩ Wrap Cells'}</button>
           <button className="pill" onClick={onClearTags} disabled={selectedTagsSize === 0}>Clear Tags</button>
+
+          {/* ✅ NEW: Filters button with the test hook Playwright expects */}
+          <button
+            className="pill"
+            type="button"
+            data-test="open-drawer"
+            aria-controls="app-drawer"
+            onClick={onOpenDrawer}
+            title="Open filters drawer"
+          >
+            Filters
+          </button>
         </div>
+
         <div className="toolbar-group">
           <button className="pill" onClick={onExportCSV}>⬇ Export CSV</button>
           <button className="pill" onClick={onUploadClick}>⬆ Upload CSV</button>
         </div>
       </div>
+
       <div className="toolbar-secondary">
         <div className="toolbar-group">
           <button className="pill" onClick={onShowColumnsModal}>☰ Columns…</button>

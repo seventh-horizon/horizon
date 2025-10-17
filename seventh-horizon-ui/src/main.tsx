@@ -1,6 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import AppRefactored from './App.refactored'; // ✅ Correct: Imports the new refactored component
+import App from './App'; // ✅ Correct: Imports the new refactored component
 // import ErrorBoundary from './components/ErrorBoundary'; // Temporarily commented out for debugging
 import './index.css';
 
@@ -13,7 +13,7 @@ if (!rootElement) {
 ReactDOM.createRoot(rootElement).render(
   <React.StrictMode>
     {/* <ErrorBoundary> */}
-      <AppRefactored />
+      <App />
     {/* </ErrorBoundary> */}
   </React.StrictMode>
 );

@@ -1,10 +1,16 @@
-import { defineConfig } from '@playwright/test';
+import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
   testDir: 'tests',
   use: {
     baseURL: 'http://localhost:5173/', // lets tests use page.goto('/')
   },
+  projects: [
+    {
+      name: 'chromium',
+      use: { ...devices['Desktop Chrome'], viewport: { width: 1280, height: 800 } },
+    },
+  ],
   webServer: {
     command: 'npm run dev:root',       // serves your app at /
     url: 'http://localhost:5173/',

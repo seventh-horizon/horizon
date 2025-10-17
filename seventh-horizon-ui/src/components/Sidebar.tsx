@@ -1,4 +1,3 @@
-import type { Row } from '../types';
 
 interface SidebarProps {
   header: string[];

@@ -2,6 +2,7 @@ import { test, expect } from '@playwright/test';
 
 test('landing looks correct', async ({ page }) => {
   await page.goto('/');
+  await page.waitForSelector('.card', { state: 'visible' });
   await expect(page).toHaveScreenshot('landing.png', {
     // Lock to viewport to avoid page-height diffs across environments
     fullPage: false,
