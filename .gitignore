@@ -29,10 +29,8 @@ public/sw.js
 scripts/dump-latest
 scripts/snapshot
 scripts/validate
-<<<<<<< HEAD
-seventh-horizon-ui/test-results/
-tests/__pycache__/
-**/*.pyc
-=======
 *.egg-info/
->>>>>>> origin/main
+__pycache__/
+*.py[cod]
+*..class
+*.bak

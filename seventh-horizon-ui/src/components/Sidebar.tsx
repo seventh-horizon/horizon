@@ -1,6 +1,7 @@
+import React, { useMemo } from 'react';
 
 interface SidebarProps {
-  header: string[];
+  header: any[];
   popularTags: [string, number][];
   selectedTags: Set<string>;
   hiddenCols: Set<number>;
@@ -11,7 +12,7 @@ interface SidebarProps {
   onRunSelect: (path: string) => void;
 }
 
-export function Sidebar({
+export const Sidebar: React.FC<SidebarProps> = ({
   header,
   popularTags,
   selectedTags,
@@ -20,73 +21,94 @@ export function Sidebar({
   csvPath,
   onToggleTag,
   onToggleColumn,
-  onRunSelect,
-}: SidebarProps) {
+  onRunSelect
+}) => {
+  // Normalize header to strings for display
+  const headerLabels = useMemo(
+    () => header.map((h, i) => (String(h ?? '').trim() || `Column ${i + 1}`)),
+    [header]
+  );
+
   return (
-    <aside className="card sidebar" aria-label="Sidebar controls">
-      <h3 className="sidebar-header">Runs</h3>
-      <div className="menu">
-        {runs.length > 0 ? (
-          runs.map(run => {
-            const isActive = run.path === csvPath;
-            return (
-              <button
-                key={run.path}
-                type="button"
-                className={`menu-item ${isActive ? 'active' : ''}`}
-                onClick={() => onRunSelect(run.path)}
-                aria-current={isActive ? 'page' : undefined}
-              >
-                {run.name}
-              </button>
-            );
-          })
+    <aside className="sidebar" data-test="sidebar" aria-label="Sidebar">
+      {/* Runs chooser */}
+      <section className="card" aria-labelledby="runs-header">
+        <h3 id="runs-header" className="section-subheader">Runs</h3>
+        {runs.length === 0 ? (
+          <p className="muted" style={{ margin: 0 }}>No runs discovered.</p>
         ) : (
-          <div className="menu-item-placeholder">No runs found</div>
+          <select
+            data-test="runs-select"
+            value={csvPath}
+            onChange={(e) => onRunSelect(e.target.value)}
+            aria-label="Choose run"
+            style={{ width: '100%' }}
+          >
+            {runs.map(r => (
+              <option key={r.path} value={r.path}>{r.name || r.path}</option>
+            ))}
+          </select>
         )}
-      </div>
+      </section>
 
-      <h3 className="sidebar-header">Popular Tags</h3>
-      <div className="chips">
-        {popularTags.length ? (
-          popularTags.map(([tag, count]) => {
-            const active = selectedTags.has(tag);
-            return (
-              <button
-                key={tag}
-                type="button"
-                className={`chip ${active ? 'active' : ''}`}
-                onClick={() => onToggleTag(tag)}
-                aria-pressed={active}
-              >
-                {tag}
-                <span className="count" aria-label={`${count} rows`}>{count}</span>
-              </button>
-            );
-          })
+      {/* Popular tags */}
+      <section className="card" aria-labelledby="tags-header">
+        <h3 id="tags-header" className="section-subheader">Popular tags</h3>
+        {popularTags.length === 0 ? (
+          <p className="muted" style={{ margin: 0 }}>No tags found.</p>
         ) : (
-          <div className="menu-item-placeholder">—</div>
+          <ul className="tag-list" style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+            {popularTags.map(([tag, count]) => {
+              const active = selectedTags.has(tag);
+              return (
+                <li key={tag} style={{ marginBottom: 6 }}>
+                  <button
+                    type="button"
+                    className={`pill ${active ? 'active' : ''}`}
+                    data-test={`tag-${tag}`}
+                    aria-pressed={active}
+                    onClick={() => onToggleTag(tag)}
+                    title={active ? 'Remove tag filter' : 'Add tag filter'}
+                  >
+                    {tag} &nbsp;
+                    <span className="muted" aria-hidden>({count})</span>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
         )}
-      </div>
+      </section>
 
-      <h3 className="sidebar-header">Columns</h3>
-      <div className="menu">
-        {header.map((h, i) => {
-          const id = `col-toggle-${i}`;
-          return (
-            <label htmlFor={id} key={i} className="menu-item">
-              <input
-                type="checkbox"
-                id={id}
-                name={id}
-                checked={!hiddenCols.has(i)}
-                onChange={() => onToggleColumn(i)}
-              />
-              {h || `Column ${i + 1}`}
-            </label>
-          );
-        })}
-      </div>
+      {/* Column visibility */}
+      <section className="card" aria-labelledby="columns-header">
+        <h3 id="columns-header" className="section-subheader">Columns</h3>
+        {headerLabels.length === 0 ? (
+          <p className="muted" style={{ margin: 0 }}>No columns.</p>
+        ) : (
+          <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+            {headerLabels.map((label, idx) => {
+              const hidden = hiddenCols.has(idx);
+              return (
+                <li key={idx} style={{ marginBottom: 4 }}>
+                  <label style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                    <input
+                      type="checkbox"
+                      checked={!hidden}
+                      onChange={() => onToggleColumn(idx)}
+                      aria-label={`Toggle column ${label}`}
+                      data-test={`col-${idx}`}
+                    />
+                    <span>{label}</span>
+                  </label>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </section>
     </aside>
   );
-}
+};
+
+export default Sidebar;
