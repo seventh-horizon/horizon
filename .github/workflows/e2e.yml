@@ -3,6 +3,7 @@ name: CI
 on:
   push:
   pull_request:
+  workflow_dispatch:
 
 jobs:
   # ---------- Python unit tests ----------
@@ -106,6 +107,53 @@ jobs:
           name: playwright-artifacts-${{ github.run_id }}
           path: seventh-horizon-ui/playwright-report
           if-no-files-found: ignore
+          retention-days: 7
+
+  generate_snapshots:
+    name: Generate Playwright Linux snapshots (manual)
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    env:
+      TZ: UTC
+    defaults:
+      run:
+        working-directory: seventh-horizon-ui
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+          cache-dependency-path: 'seventh-horizon-ui/package-lock.json'
+
+      - name: Install deps
+        run: npm ci
+
+      - name: Restore Playwright browsers cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('seventh-horizon-ui/package-lock.json') }}
+          restore-keys: |
+            playwright-${{ runner.os }}-
+
+      - name: Install Playwright (Chromium only)
+        run: npx playwright install chromium
+
+      - name: Generate Chromium snapshots on Linux
+        env:
+          CI: true
+        run: npm run test:e2e -- --project=chromium --update-snapshots
+
+      - name: Upload generated snapshots
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-linux-snapshots-${{ github.run_id }}
+          path: seventh-horizon-ui/tests/*-snapshots/*.png
+          if-no-files-found: error
           retention-days: 7
 
   deploy:
