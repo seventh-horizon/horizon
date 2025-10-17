@@ -30,3 +30,7 @@ scripts/dump-latest
 scripts/snapshot
 scripts/validate
 *.egg-info/
+__pycache__/
+*.py[cod]
+*..class
+*.bak
