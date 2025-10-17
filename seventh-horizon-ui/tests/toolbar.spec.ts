@@ -4,7 +4,7 @@ import { test, expect } from '@playwright/test';
 function sleep(ms: number) { return new Promise(r => setTimeout(r, ms)); }
 
 test('all toolbar buttons have an accessible name (aria-label or text)', async ({ page }) => {
-  await page.goto('http://localhost:5173/');
+  await page.goto('/');
   await page.waitForLoadState('domcontentloaded');
   await page.waitForSelector('.toolbar');
 
