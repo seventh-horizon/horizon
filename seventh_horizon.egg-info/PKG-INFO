@@ -1,0 +1,13 @@
+Metadata-Version: 2.4
+Name: seventh-horizon
+Version: 0.1.0
+Summary: Seventh Horizon tooling
+Requires-Python: >=3.10
+Description-Content-Type: text/markdown
+Requires-Dist: numpy>=1.26
+Requires-Dist: matplotlib>=3.8
+Requires-Dist: pytest>=8
+
+
+![CI](https://github.com/seventh-horizon/horizon/actions/workflows/e2e.yml/badge.svg)
+![Release](https://img.shields.io/github/v/tag/seventh-horizon/horizon?label=release)
