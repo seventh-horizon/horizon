@@ -1,6 +1,7 @@
 import os
 import pathlib
 import csv
+import json
 import subprocess
 import pytest
 
@@ -25,6 +26,11 @@ def _ensure_plot_inputs():
             w.writerow(["node", "kappa"])  # simple table
             w.writerow(["A", 0.5])
             w.writerow(["B", 0.7])
+
+    summary = out / "summary.json"
+    if not summary.exists():
+        with summary.open("w", encoding="ascii") as f:
+            json.dump({"label": "test", "Phi": 1.5}, f)
 
     # Point OUT env var to the same directory if the script honors it
     os.environ.setdefault("OUT", str(out.resolve()))

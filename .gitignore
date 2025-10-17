@@ -30,3 +30,4 @@ scripts/dump-latest
 scripts/snapshot
 scripts/validate
 *.egg-info/
+.pytest_cache/
