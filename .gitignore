@@ -9,3 +9,21 @@ git rm -r --cached **/__pycache__ || true
 git add .gitignore
 git commit -m "chore(gitignore): align for UI (Playwright) + Python tools"
 git push
+# Local runs / dumps / env
+.seventh_horizon/
+.dump_tmp_*/
+dump_*.tar.gz
+.venv/
+
+# Generated app outputs
+seventh-horizon-ui/dist/
+seventh-horizon-ui/playwright-report/
+seventh-horizon-ui/test-results/
+seventh-horizon-ui/.env
+
+# Python caches / tool outputs
+tools/__pycache__/
+tools/out/
+
+# (If timeline JSONs are generated, ignore them too)
+public/field/timeline/*.json
