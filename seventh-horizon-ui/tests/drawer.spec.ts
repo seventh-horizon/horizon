@@ -21,15 +21,11 @@ test('drawer toggles open/close from toolbar', async ({ page }) => {
   }
 
   await opener.click();
-  await page.waitForSelector('[data-test="drawer"]', { state: 'visible', timeout: 3000 });
+  await page.waitForSelector('[data-test="drawer"].open, [data-test="drawer"]:visible', { timeout: 3000 });
 
   const drawer = page.locator('[data-test="drawer"]');
-  // Ensure only one drawer is visible to prevent multiple drawers from overlapping and causing UI issues
-  await expect(drawer.filter({ has: page.locator(':visible') })).toHaveCount(1);
   await expect(drawer).toBeVisible();
-  // Ensure only one visible drawer
-  await expect(drawer.filter({ has: page.locator(':visible') })).toHaveCount(1);
-  await expect(drawer).toBeVisible();
+  await expect(drawer).toHaveCount(1);
 
   // Close via explicit close button or keyboard escape
   const closer = drawer.getByRole('button', { name: /close|done|apply|hide/i }).first();

@@ -8,11 +8,11 @@ test('toolbar Filters button opens the drawer', async ({ page }) => {
   await page.goto('/');
 
   // Find the drawer opener by stable data-test hook
-  const opener = page.getByTitle('Open filters drawer');
+  const opener = page.locator('[data-test="open-drawer"]').first();
   await expect(opener).toBeVisible();
   await opener.click();
 
-  // The drawer should become visible after clicking
-  const drawer = page.locator('[data-test="drawer"], [role="dialog"], aside[role="complementary"], .drawer, .sidepanel');
+  await page.waitForSelector('[data-test="drawer"].open, [data-test="drawer"]:visible', { timeout: 3000 });
+  const drawer = page.locator('[data-test="drawer"]');
   await expect(drawer).toBeVisible();
 });
