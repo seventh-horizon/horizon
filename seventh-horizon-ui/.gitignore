@@ -40,4 +40,4 @@ env/
 dump_*.tar.gz
 
 # --- Misc CI temps ---
-/tmp/
+/tmp/*.bak
