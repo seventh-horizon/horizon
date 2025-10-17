@@ -21,11 +21,11 @@ jobs:
       - name: Install Playwright Browsers
         run: npx playwright install --with-deps
       - name: Update snapshots (generate Linux baseline)
-        run: npx playwright test tests/visual.spec.ts --update-snapshots
+        run: npx playwright test tests/visual.spec.ts tests/filtering.spec.ts --update-snapshots
       - name: Commit Linux baseline
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add tests/visual.spec.ts-snapshots/
-          git commit -m "test(visual): add Linux baseline snapshot" || echo "No changes"
+          git add tests/visual.spec.ts-snapshots/ tests/filtering.spec.ts-snapshots/
+          git commit -m "test(visual): add Linux baseline snapshots" || echo "No changes"
           git push
