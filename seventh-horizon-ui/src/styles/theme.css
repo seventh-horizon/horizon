@@ -1,0 +1,33 @@
+.veil-overlay,
+.rose-overlay,
+.observatory-overlay {
+  position: fixed;
+  inset: 0;
+  pointer-events: none; /* critical for tests */
+  background-attachment: scroll;
+}
+
+.veil-overlay {
+  z-index: 10;
+  background: radial-gradient(1200px 800px at 10% -10%, rgba(50,242,254,.12), transparent 60%);
+}
+
+.rose-overlay {
+  z-index: 5;
+  background: radial-gradient(900px 700px at 80% -20%, rgba(161,49,197,.06), transparent 65%);
+}
+
+.observatory-overlay {
+  z-index: 0;
+  background: radial-gradient(1600px 1000px at 50% 110%, rgba(26,22,53,.10), transparent 75%);
+}
+
+/* Motion guards */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}

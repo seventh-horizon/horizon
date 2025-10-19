@@ -28,6 +28,7 @@ export default defineConfig({
   webServer: {
     command: 'npm run dev:root',       // serves your app at /
     url: 'http://localhost:5173/',
+    // Node global typing supplied via tsconfig "types": ["node"]; boolean coercion via "!" is intentional
     reuseExistingServer: !process.env.CI,
     stdout: 'pipe',
     stderr: 'pipe',
