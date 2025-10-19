@@ -1,0 +1,346 @@
+/* =========================================================
+   Seventh Horizon UI — Definitive Overlay/A11y + Symbolic Stack
+   Deterministic, tokens-first, CI-safe (Playwright/LH ≥0.90)
+   Spec: SRL-0012.1 (z-index), UI v1.3.0 guardrails
+   ========================================================= */
+
+/* === 0. Root Tokens & Global Hints === */
+:root {
+  /* System hints */
+  color-scheme: dark;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  /* Core brand fallback tokens (theme can override) */
+  --bg: #0b0c12;
+  --card-bg: #13151b;
+  --text: #ffffff;
+  --border: rgba(255,255,255,.08);
+
+  /* Focus ring (HSL components) */
+  --ring: 210 100% 56%;
+  --ring-width: 2px;
+  --ring-offset: 2px;
+
+  /* SRL-0012.1 symbolic z-index stack */
+  --z-observatory: 0;
+  --z-rose: 5;
+  --z-veil: 10;
+  --z-surface: 20;
+  --z-header: 100;
+  --z-toast: 200;
+  --z-modal: 300;
+  --z-tooltip: 400;
+
+  /* Elevation fallbacks (safe aliasing) */
+  --elev-1: 0 8px 24px rgba(0,0,0,.35);
+  --elev-2: 0 12px 32px rgba(0,0,0,.4);
+  --shadow: var(--elev-1);
+  --header-shadow: 0 2px 0 rgba(0,0,0,.25);
+
+  /* Layout primitives */
+  --radius: 8px;
+  --gap: 12px;
+  --grid-unit: 4px;
+
+  /* Motion vars */
+  --veil-fade-duration: 1200ms;
+  --veil-fade-ease: ease-in-out;
+  --tooltip-delay: 150ms;
+  --tooltip-duration: 200ms;
+  --tooltip-ease: cubic-bezier(0.25, 0.1, 0.25, 1);
+
+  /* Toast stacking (managed by JS) */
+  --toast-stack-offset: 0px;
+
+  /* Optional brand tints for ambience (as RGB components) */
+  --tint-cyan: 50, 242, 254;     /* #32F2FE */
+  --tint-violet: 127, 111, 233;  /* #7F6FE9 */
+  --tint-magenta: 161, 49, 197;  /* #A131C5 */
+  --tint-navy: 26, 22, 53;       /* #1A1635 */
+}
+
+/* === 1. Defensive Defaults & Resets === */
+*,
+*::before,
+*::after { box-sizing: border-box; }
+
+html, body {
+  background: var(--bg);
+  color: var(--text);
+  margin: 0;
+}
+
+img, svg, video, canvas, audio, iframe, embed, object {
+  display: block;
+  max-width: 100%;
+}
+button, input, select, textarea { font: inherit; color: inherit; }
+a { color: inherit; text-decoration: none; }
+ul, ol { list-style: none; padding: 0; margin: 0; }
+h1, h2, h3, h4, h5, h6 { margin: 0; font-weight: inherit; }
+p { margin: 0; }
+
+/* === 2. App Isolation Layer === */
+.app-root, #root { isolation: isolate; }
+
+/* === 3. Atmospheric Overlays (Non-Interactive Symbolic Stack) === */
+.veil-overlay,
+.rose-overlay,
+.observatory-overlay {
+  position: fixed;
+  inset: 0;
+  pointer-events: none; /* ambient only; never intercept input */
+  background-attachment: scroll;
+}
+.veil-overlay        { z-index: var(--z-veil); }
+.rose-overlay        { z-index: var(--z-rose); }
+.observatory-overlay { z-index: var(--z-observatory); }
+
+/* Ambient gradient — Veil (primary brand glow) */
+.veil-overlay {
+  background:
+    radial-gradient(1200px 800px at 10% -10%, rgba(var(--tint-cyan), .12), transparent 60%),
+    radial-gradient(1000px 700px at 90%  10%, rgba(var(--tint-violet), .10), transparent 65%),
+    radial-gradient(1400px 900px at 50% 120%, rgba(var(--tint-magenta), .08), transparent 70%);
+}
+
+/* Optional accents (kept subtle) */
+.rose-overlay {
+  background:
+    radial-gradient(900px 700px at 80% -20%, rgba(var(--tint-magenta), .06), transparent 65%),
+    radial-gradient(900px 700px at 20% 120%, rgba(var(--tint-violet), .05), transparent 70%);
+}
+.observatory-overlay {
+  background:
+    radial-gradient(1600px 1000px at 50% 110%, rgba(var(--tint-navy), .10), transparent 75%);
+}
+
+/* === 4. Header Chrome (always above symbolic stack) === */
+header, [role="banner"] {
+  position: sticky;
+  top: 0;
+  z-index: var(--z-header);
+  background: var(--card-bg);
+  border-bottom: 1px solid var(--border);
+  box-shadow: var(--header-shadow);
+}
+
+/* === 5. Surface Components === */
+.card, .table-wrap, .panel {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+  border-radius: var(--radius);
+  z-index: var(--z-surface);
+  overflow: visible; /* prevent focus ring clipping */
+  transition: border-color .2s ease, box-shadow .2s ease;
+}
+
+/* Focus-within for spatial awareness (opt-in via .focus-highlights if desired) */
+.card.focus-highlights:focus-within,
+.panel.focus-highlights:focus-within {
+  border-color: hsl(var(--ring) / .75);
+  box-shadow: var(--elev-2);
+}
+
+/* === 6. Focus Outlines (consistent, accessible) === */
+th > button.sort:focus-visible,
+button:focus-visible,
+[role="button"]:focus-visible,
+a:focus-visible {
+  outline: var(--ring-width) solid #4da3ff;  /* hard fallback */
+  outline-offset: var(--ring-offset);
+  box-shadow: 0 0 0 4px rgba(77, 163, 255, 0.30);
+}
+@supports (color: hsl(210 100% 56% / 0.9)) {
+  th > button.sort:focus-visible,
+  button:focus-visible,
+  [role="button"]:focus-visible,
+  a:focus-visible {
+    outline-color: hsl(var(--ring) / .9);
+    box-shadow: 0 0 0 4px hsl(var(--ring) / .25);
+  }
+}
+
+/* === 7. High Contrast Mode (WCAG forced colors) === */
+@media (forced-colors: active) {
+  header, [role="banner"], .card, .panel {
+    background: Canvas !important;
+    border-color: CanvasText !important;
+    color: CanvasText !important;
+  }
+  :focus-visible {
+    outline: 2px solid CanvasText !important;
+    outline-offset: 2px;
+    box-shadow: none !important;
+  }
+  .card, .panel { forced-color-adjust: auto; }
+}
+
+/* === 8. Prefers Contrast: More (Future Proof) === */
+@media (prefers-contrast: more) {
+  .card, .panel { border-color: #ffffff; }
+}
+
+/* === 9. Print Mode Sanity === */
+@media print {
+  .veil-overlay,
+  .rose-overlay,
+  .observatory-overlay { display: none !important; }
+  .card, .panel { box-shadow: none !important; }
+  header, [role="banner"] { position: static; }
+}
+
+/* === 10. Motion Guards — System Preference (0s for clarity) === */
+@media (prefers-reduced-motion: reduce) {
+  .veil-overlay,
+  .rose-overlay,
+  .observatory-overlay { animation: none !important; }
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0s !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0s !important;
+  }
+  /* Allow essential indicators to remain legible */
+  [role="progressbar"], [aria-busy="true"] {
+    animation-duration: revert !important;
+    transition-duration: revert !important;
+  }
+}
+
+/* === 11. Motion Guards — Manual Toggle Class === */
+.rm .animated,
+[data-rm="true"] .animated { animation: none !important; transition: none !important; }
+
+/* === 12. A11y Utilities === */
+.sr-only {
+  position: absolute;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0, 0, 0, 0);
+  white-space: nowrap; border-width: 0;
+}
+/* Make an sr-only element visible when focused (for skip links) */
+.sr-only-focusable:active,
+.sr-only-focusable:focus {
+  position: static;
+  width: auto; height: auto;
+  margin: 0;
+  overflow: visible; clip: auto;
+  white-space: normal;
+}
+
+/* === 13. Overlays-Friendly UI Elements (toasts/modals/tooltips) === */
+
+/* Toasts (stackable, safe-area aware) */
+.toast {
+  position: fixed;
+  z-index: var(--z-toast);
+  inset-inline-start: auto;
+  inset-inline-end: max(16px, env(safe-area-inset-right, 0px));
+  inset-block-start: auto;
+  inset-block-end: calc(max(16px, env(safe-area-inset-bottom, 0px)) + var(--toast-stack-offset, 0px));
+  background: var(--card-bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  box-shadow: var(--elev-2);
+  border-radius: var(--radius);
+  padding: var(--gap) calc(var(--gap) + 2px);
+}
+
+/* Modal (requires ARIA & JS focus-trap; see docs below) */
+.modal {
+  position: fixed;
+  z-index: var(--z-modal);
+  inset: 0;
+  display: grid;
+  place-items: center;
+}
+.modal__backdrop {
+  position: absolute; inset: 0;
+  background: rgba(0,0,0,.5);
+  pointer-events: auto; /* must intercept to close on click */
+}
+.modal__dialog {
+  position: relative;
+  background: var(--card-bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--elev-2);
+  padding: calc(var(--gap) * 1.33);
+  z-index: calc(var(--z-modal) + 1);
+  outline: 0;
+  /* tabindex is set programmatically by a11y-helpers.js */
+}
+
+/* Tooltip (requires ESC & hoverable behavior in JS) */
+.tooltip {
+  position: absolute;
+  z-index: var(--z-tooltip);
+  background: var(--card-bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 8px;
+  box-shadow: var(--elev-1);
+  opacity: 0;
+  transform: translateY(2px);
+  pointer-events: none;
+  transition:
+    opacity var(--tooltip-duration) var(--tooltip-ease) var(--tooltip-delay),
+    transform var(--tooltip-duration) var(--tooltip-ease) var(--tooltip-delay);
+}
+.tooltip[data-open="true"] {
+  opacity: 1; transform: translateY(0);
+  pointer-events: auto;
+}
+
+/* === 14. Tables / Sorting (focus & layering sanity) === */
+.table-wrap { position: relative; }
+th > button.sort {
+  position: relative;
+  background: transparent;
+  border: 0;
+  color: inherit;
+  padding: 6px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+th > button.sort:hover { background: rgba(255,255,255,.04); }
+
+/* === 15. Container Queries (progressive; corrected syntax) === */
+@supports (container-type: inline-size) {
+  .cq { container-type: inline-size; }
+  @container (min-width: 400px) {
+    .cq-area.card { padding: calc(var(--grid-unit) * 3); }
+  }
+}
+
+/* === 16. Brand gradient utility (for hero bands, optional) === */
+.brand-gradient-135 {
+  background: linear-gradient(135deg,
+    rgb(var(--tint-cyan)) 0%,
+    rgb(var(--tint-violet)) 50%,
+    rgb(var(--tint-magenta)) 100%);
+}
+
+/* =========================================================
+   MODAL IMPLEMENTATION REQUIREMENTS (document-only):
+
+   - Add role="dialog" aria-modal="true" to the modal root (or dialog node).
+   - Provide aria-labelledby (title id) and optionally aria-describedby.
+   - On open: move focus into .modal__dialog (first focusable or dialog itself).
+   - Trap focus within dialog; ESC closes; clicking backdrop closes.
+   - On close: restore focus to the trigger that opened the modal.
+
+   Tooltip requirements:
+   - ESC closes; tooltip remains visible when hovered; must not obscure trigger.
+
+   Toast requirements:
+   - Use role="status" (polite) or role="alert" (assertive) for announcements.
+   ========================================================= */

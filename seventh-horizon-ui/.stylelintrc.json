@@ -1,0 +1,15 @@
+{
+  "extends": ["stylelint-config-standard"],
+  "rules": {
+    "declaration-property-value-allowed-list": {
+      "z-index": [
+        "/^var\\(--z-[a-z-]+\\)$/",
+        "auto",
+        "0"
+      ]
+    },
+    "color-named": "never",
+    "selector-max-specificity": "0,4,0",
+    "no-descending-specificity": null
+  }
+}
