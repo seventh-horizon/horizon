@@ -14,7 +14,7 @@
     "typecheck": "tsc --noEmit",
     "test:watch": "vitest",
     "prepare:e2e": "playwright install --with-deps",
-    "brand:verify": "node scripts/verify-dreamb-tokens.mjs --file ./brand/theme_tokens_v1.3.1.json || echo 'Use --url <endpoint> to check remote'"
+    "brand:verify": "node scripts/verify-dreamb-tokens.mjs --file ./src/tokens/theme_tokens_v1.3.1.json"
   },
   "dependencies": {
     "immer": "^10.1.3",
