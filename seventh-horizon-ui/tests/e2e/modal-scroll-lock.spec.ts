@@ -55,6 +55,12 @@ test.describe('Modal scroll-lock + focus restore', () => {
     );
     expect(hasLockAfter).toBeFalsy();
 
+    // Wait until focus actually returns to the trigger (WebKit on CI needs a beat)
+    await page.waitForFunction(() => {
+      const el = document.activeElement as HTMLElement | null;
+      return el?.id === 'trigger';
+    }, { timeout: 10000 });
+
     await expect(page.locator('#trigger')).toBeFocused();
-  });
+});
 });

@@ -119,16 +119,22 @@ export function bindModal(modalRoot) {
     trap.close();
     modalRoot.hidden = true;
 
-    // Ensure focus returns to opener element on next microtask (WebKit-safe)
-    try {
-      const el = openerEl;
-      queueMicrotask(() => {
-        if (el && document.contains(el) && typeof el.focus === 'function') {
+    // Ensure focus returns to opener element. On WebKit CI, deferring to the next two RAFs
+// is more reliable than a microtask because it runs *after* style/paint + inert toggles.
+try {
+  const el = openerEl;
+  // Double-RAF to run after DOM visibility + inert/aria-hidden changes fully settle.
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      if (el && document.contains(el) && typeof el.focus === 'function') {
+        try {
           el.focus({ preventScroll: true });
-        }
-      });
-    } catch {}
-    openerEl = null;
+        } catch {}
+      }
+    });
+  });
+} catch {}
+openerEl = null;
   });
 
   if (!modalRoot.hasAttribute('hidden')) modalRoot.hidden = true;
