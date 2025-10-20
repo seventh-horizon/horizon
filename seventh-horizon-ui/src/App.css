@@ -95,7 +95,7 @@ tbody tr:nth-child(odd) td { background: #191221; }
 
 /* Wrapping behavior toggled by .wrap-on on the card */
 table th, table td { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.card.wrap-on table th, .card.wrap-on table td { white-space: normal; word-break: break-word; }
+.card.wrap-on table th, .card.wrap-on table td { white-space: normal; overflow-wrap: anywhere; }
 
 /* Pager */
 .pager { display: flex; align-items: center; gap: 6px; margin-bottom: 12px; }
@@ -115,3 +115,18 @@ table th, table td { white-space: nowrap; overflow: hidden; text-overflow: ellip
   display: block;
   opacity: 1;
 }
+
+/* ===== Layering guardrails for tests (SRL-0012.1 parity) ===== */
+
+/* Ensure the page banner/header always sits above symbolic overlays */
+header, [role="banner"] {
+  position: sticky;
+  top: 0;
+  z-index: 100; /* above veil(10)/rose(5)/observatory(0) */
+}
+
+/* Minimal overlay contracts so tests can assert behavior
+   (theme.css provides the full symbolic stack; these are safety nets in case it's not loaded) */
+.veil-overlay { pointer-events: none; z-index: 10; }
+.rose-overlay { z-index: 5; }
+.observatory-overlay { z-index: 0; }

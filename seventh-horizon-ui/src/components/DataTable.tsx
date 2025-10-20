@@ -36,27 +36,40 @@ export function DataTable({
 
   return (
     <div className="table-wrap" role="region" aria-label="Results table" tabIndex={0}>
-      <table>
+      <table role="grid">
         <thead>
           <tr>
             {visibleIndices.map((colIdx) => {
               const label = String(header[colIdx] ?? `Column ${colIdx + 1}`);
               const ariaSort = ariaSortFor(colIdx);
               return (
-                <th key={colIdx} scope="col" aria-sort={ariaSort}>
+                <th
+                  key={colIdx}
+                  id={`col-${colIdx}`}
+                  scope="col"
+                  aria-sort={ariaSort}
+                >
                   <button
                     type="button"
                     onClick={() => onSort(colIdx)}
                     title={`Sort by ${label}`}
                     aria-label={`Sort by ${label}`}
-                    className="th-button"
+                    className="sort"
+                    aria-pressed={ariaSort !== 'none'}
+                    aria-describedby={`sort-indicator-${colIdx}`}
                   >
                     <span className="th-label">{label}</span>
-                    {ariaSort !== 'none' && (
-                      <span className="th-sort-indicator" aria-hidden="true">
-                        {ariaSort === 'ascending' ? ' ▲' : ' ▼'}
-                      </span>
-                    )}
+                    <span
+                      className="th-sort-indicator"
+                      id={`sort-indicator-${colIdx}`}
+                      aria-hidden="true"
+                    >
+                      {ariaSort !== 'none'
+                        ? ariaSort === 'ascending'
+                          ? ' ▲'
+                          : ' ▼'
+                        : ''}
+                    </span>
                   </button>
                 </th>
               );
@@ -69,7 +82,11 @@ export function DataTable({
               {visibleIndices.map((colIdx) => {
                 const v = row[colIdx];
                 return (
-                  <td key={colIdx} data-col={String(header[colIdx] ?? colIdx)}>
+                  <td
+                    key={colIdx}
+                    data-col={String(header[colIdx] ?? colIdx)}
+                    headers={`col-${colIdx}`}
+                  >
                     {v as React.ReactNode}
                   </td>
                 );

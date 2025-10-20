@@ -1,0 +1,66 @@
+/* src/styles/veil-motion.css */
+
+/* Overlays are always present; hidden when data-activated="false" */
+.veil-overlay, .rose-overlay, .observatory-overlay {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+}
+
+/* Correct symbolic stacking order (with safe fallbacks) */
+.veil-overlay        { z-index: var(--z-veil, 10); }
+.rose-overlay        { z-index: var(--z-rose, 5); }
+.observatory-overlay { z-index: var(--z-observatory, 0); }
+
+/* Hide overlays when not activated; avoid layout containment (breaks abs/fixed descendants) */
+[data-activated="false"] .veil-overlay,
+[data-activated="false"] .rose-overlay,
+[data-activated="false"] .observatory-overlay {
+  display: none;
+}
+
+/* Default: do not promote; only promote while animating */
+[data-motion-role="decorative"] { will-change: auto; }
+
+:root {
+  /* Telemetry/motion hooks */
+  --veil-o1: .12;
+  --veil-o2: .10;
+}
+
+/* Veil drift (overlays only) */
+@keyframes veil-drift {
+  0%   { transform: translate3d(0,0,0);       opacity: var(--veil-o1); }
+  50%  { transform: translate3d(6px,3px,0);   opacity: var(--veil-o2); }
+  100% { transform: translate3d(0,0,0);       opacity: var(--veil-o1); }
+}
+
+/* Activated + motion enabled + overlay marked decorative + ANIMATING */
+[data-activated="true"][data-motion-enabled="true"] .veil-overlay[data-motion-role="decorative"].animating {
+  will-change: transform, opacity;            /* only promote while active */
+  animation: veil-drift 12s ease-in-out infinite;
+}
+
+/* Strict reduced-motion: also nuke delays */
+@media (prefers-reduced-motion: reduce) {
+  [data-motion-role="decorative"] {
+    animation: none !important;
+    animation-duration: 0s !important;
+    animation-delay: 0s !important;
+    transition-duration: 0s !important;
+    transition-delay: 0s !important;
+  }
+}
+
+/* Print safety (hide decorative overlays and animations) */
+@media print {
+  .veil-overlay, .rose-overlay, .observatory-overlay,
+  [data-motion-role="decorative"] { display: none !important; }
+  * { animation: none !important; transition: none !important; }
+}
+
+/* Modal scroll lock helper (padding is set via JS var) */
+html.modal-open {
+  overflow: hidden;
+  padding-right: var(--scrollbar-width, 0px);
+}

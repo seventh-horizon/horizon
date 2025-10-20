@@ -1,0 +1,17 @@
+name: brand-validate
+on:
+  pull_request:
+    paths:
+      - "seventh-horizon-brand/**"
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '20' }
+      - run: npm i -g ajv-cli@5
+      - name: Validate theme tokens against schema
+        run: |
+          ajv validate -s seventh-horizon-brand/packages/schemas/theme-tokens.schema.json \
+                       -d seventh-horizon-brand/manifests/theme_tokens_v1.3.1.json

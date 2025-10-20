@@ -1,0 +1,47 @@
+{
+  "meta": {
+    "name": "DreamB v1.3.1",
+    "version": "1.3.1",
+    "source": "seventh-horizon-brand/manifests",
+    "generatedAt": "2025-10-19T00:00:00Z"
+  },
+  "colors": {
+    "bg": "#0b0c12",
+    "cardBg": "#13151b",
+    "text": "#ffffff",
+    "border": "rgba(255,255,255,0.08)",
+    "ring": "210 100% 56%"
+  },
+  "zIndex": {
+    "observatory": 0,
+    "rose": 5,
+    "veil": 10,
+    "surface": 20,
+    "header": 100,
+    "toast": 200,
+    "modal": 300,
+    "tooltip": 400
+  },
+  "tints": {
+    "cyan": [
+      50,
+      242,
+      254
+    ],
+    "violet": [
+      127,
+      111,
+      233
+    ],
+    "magenta": [
+      161,
+      49,
+      197
+    ],
+    "navy": [
+      26,
+      22,
+      53
+    ]
+  }
+}

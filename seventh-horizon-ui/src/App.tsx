@@ -23,6 +23,8 @@ function AppRefactored() {
 
   const fileRef = useRef<HTMLInputElement>(null);
   const [drawerOpen, setDrawerOpen] = useState(false); // simple drawer state for tests
+  const drawerRef = useRef<HTMLElement | null>(null);
+  const drawerOpenerRef = useRef<HTMLButtonElement | null>(null);
 
   // Fetch runs and determine initial CSV path (cancellation-safe)
   useEffect(() => {
@@ -139,6 +141,38 @@ function AppRefactored() {
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, []);
+
+  // Drawer a11y: focus management + ESC to close
+  useEffect(() => {
+    const node = drawerRef.current;
+    if (!node) return;
+
+    const focusables = () =>
+      Array.from(
+        node.querySelectorAll<HTMLElement>(
+          'a[href],button:not([disabled]),textarea:not([disabled]),input:not([disabled]),select:not([disabled]),[tabindex]:not([tabindex="-1"])'
+        )
+      );
+
+    if (drawerOpen) {
+      // make drawer visible to AT and focus first focusable (or the drawer)
+      const first = focusables()[0] ?? node;
+      first.focus({ preventScroll: true });
+    } else {
+      // restore focus to the opener when closing
+      drawerOpenerRef.current?.focus({ preventScroll: true });
+    }
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.stopPropagation();
+        setDrawerOpen(false);
+      }
+    };
+
+    node.addEventListener('keydown', onKeyDown);
+    return () => node.removeEventListener('keydown', onKeyDown);
+  }, [drawerOpen]);
 
   // ---------- Derived Data ----------
   const header = useMemo(() => (state.rows.length ? state.rows[0] : []), [state.rows]);
@@ -311,199 +345,213 @@ function AppRefactored() {
   const handleThemeToggle = useCallback(() => dispatch({ type: 'SET_THEME' }), [dispatch]);
 
   return (
-    <main className="layout" role="main">
-      <Toolbar
-        theme={state.theme}
-        csvPath={state.csvPath}
-        search={state.search}
-        wrap={state.wrap}
-        paging={state.paging}
-        pageSize={state.pageSize}
-        autoRefresh={state.autoRefresh}
-        refreshSec={state.refreshSec}
-        loading={state.loading}
-        selectedTagsSize={state.selectedTags.size}
-        onThemeToggle={handleThemeToggle}
-        onCsvPathChange={handleCsvPathChange}
-        onSearchChange={(s) => dispatch({ type: 'SET_SEARCH', payload: s })}
-        onWrapToggle={() => dispatch({ type: 'TOGGLE_WRAP' })}
-        onClearTags={() => dispatch({ type: 'CLEAR_TAGS' })}
-        onExportCSV={handleExportCSV}
-        onUploadClick={() => fileRef.current?.click()}
-        onShowColumnsModal={() => dispatch({ type: 'SET_SHOW_COLS_MODAL', payload: true })}
-        onCopyLink={handleCopyLink}
-        onPagingChange={(e) => dispatch({ type: 'SET_PAGING', payload: e })}
-        onPageSizeChange={(n) => dispatch({ type: 'SET_PAGE_SIZE', payload: n })}
-        onAutoRefreshChange={(e) => dispatch({ type: 'SET_AUTO_REFRESH', payload: e })}
-        onRefreshSecChange={(n) => dispatch({ type: 'SET_REFRESH_SEC', payload: n })}
-        onReload={loadCsv}
-        onOpenDrawer={() => setDrawerOpen(true)}
-      />
+    <>
+      {/* Symbolic atmospheric overlays (non-interactive, fixed) */}
+      <div className="observatory-overlay" aria-hidden="true" />
+      <div className="rose-overlay" aria-hidden="true" />
+      <div className="veil-overlay" aria-hidden="true" />
 
-      {/* Single drawer container for Playwright tests */}
-      <aside
-        id="app-drawer"
-        data-test="drawer"
-        role="dialog"
-        aria-label="Filters drawer"
-        aria-modal="true"
-        className={`drawer ${drawerOpen ? 'open' : ''}`}
-      >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <strong>Filters</strong>
+      {/* Header must be above overlays for SRL-0012.1 */}
+      <header role="banner">
+        <Toolbar
+          theme={state.theme}
+          csvPath={state.csvPath}
+          search={state.search}
+          wrap={state.wrap}
+          paging={state.paging}
+          pageSize={state.pageSize}
+          autoRefresh={state.autoRefresh}
+          refreshSec={state.refreshSec}
+          loading={state.loading}
+          selectedTagsSize={state.selectedTags.size}
+          onThemeToggle={handleThemeToggle}
+          onCsvPathChange={handleCsvPathChange}
+          onSearchChange={(s) => dispatch({ type: 'SET_SEARCH', payload: s })}
+          onWrapToggle={() => dispatch({ type: 'TOGGLE_WRAP' })}
+          onClearTags={() => dispatch({ type: 'CLEAR_TAGS' })}
+          onExportCSV={handleExportCSV}
+          onUploadClick={() => fileRef.current?.click()}
+          onShowColumnsModal={() => dispatch({ type: 'SET_SHOW_COLS_MODAL', payload: true })}
+          onCopyLink={handleCopyLink}
+          onPagingChange={(e) => dispatch({ type: 'SET_PAGING', payload: e })}
+          onPageSizeChange={(n) => dispatch({ type: 'SET_PAGE_SIZE', payload: n })}
+          onAutoRefreshChange={(e) => dispatch({ type: 'SET_AUTO_REFRESH', payload: e })}
+          onRefreshSecChange={(n) => dispatch({ type: 'SET_REFRESH_SEC', payload: n })}
+          onReload={loadCsv}
+          onOpenDrawer={() => setDrawerOpen(true)}
+        />
+      </header>
+
+      <main className="layout" role="main">
+        {/* Single drawer container for Playwright tests */}
+        <aside
+          ref={drawerRef as any}
+          id="app-drawer"
+          data-test="drawer"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="drawer-title"
+          tabIndex={-1}
+          hidden={!drawerOpen}
+          className={`drawer ${drawerOpen ? 'open' : ''}`}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <strong id="drawer-title">Filters</strong>
+            <button
+              type="button"
+              data-test="close-drawer"
+              aria-controls="app-drawer"
+              onClick={() => setDrawerOpen(false)}
+              aria-label="Close drawer"
+              autoFocus={drawerOpen}
+            >
+              ✕
+            </button>
+          </div>
+          <p style={{ marginTop: 12, opacity: 0.7 }}>
+            Add filter controls here (tags, runs, columns…)
+          </p>
+        </aside>
+
+        {/* Opener button that tests click */}
+        <div className="toolbar-row" style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
           <button
+            ref={drawerOpenerRef}
             type="button"
-            data-test="close-drawer"
+            data-test="open-drawer"
             aria-controls="app-drawer"
-            onClick={() => setDrawerOpen(false)}
-            aria-label="Close drawer"
+            aria-expanded={drawerOpen}
+            onClick={() => setDrawerOpen(true)}
           >
-            ✕
+            Filters
           </button>
         </div>
-        <p style={{ marginTop: 12, opacity: 0.7 }}>
-          Add filter controls here (tags, runs, columns…)
-        </p>
-      </aside>
 
-      {/* Opener button that tests click */}
-      <div className="toolbar-row" style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-        <button
-          type="button"
-          data-test="open-drawer"
-          aria-controls="app-drawer"
-          aria-expanded={drawerOpen}
-          onClick={() => setDrawerOpen(true)}
-        >
-          Filters
-        </button>
-      </div>
+        <div className="layout-main">
+          <Sidebar
+            header={header}
+            popularTags={popularTags}
+            selectedTags={state.selectedTags}
+            hiddenCols={state.hiddenCols}
+            runs={runs}
+            csvPath={state.csvPath}
+            onToggleTag={(t) => dispatch({ type: 'TOGGLE_TAG', payload: t })}
+            onToggleColumn={(i) => dispatch({ type: 'TOGGLE_COLUMN', payload: i })}
+            onRunSelect={handleCsvPathChange}
+          />
 
-      <div className="layout-main">
-        {/* Keep Sidebar in the main layout (doesn't need to be inside drawer for tests) */}
-        <Sidebar
+          <section
+            className={`card ${state.wrap ? 'wrap-on' : ''}`}
+            aria-labelledby="filtered-section-header"
+            role="region"
+          >
+            <h2 id="filtered-section-header" className="section-header">
+              Filtered Rows
+            </h2>
+
+            {state.loading && (
+              <div className="pill" role="status" aria-live="assertive">
+                Loading…
+              </div>
+            )}
+
+            {state.error && (
+              <div className="pill error" role="alert" aria-live="assertive">
+                {state.error}
+                <button style={{ marginLeft: 8 }} onClick={loadCsv}>
+                  Reload
+                </button>
+              </div>
+            )}
+
+            {!state.loading && !state.error && header.length === 0 && (
+              <div className="pill" role="status" aria-live="polite">
+                No data loaded. Pick a run in the sidebar or set VITE_DEFAULT_CSV.
+              </div>
+            )}
+
+            {header.length > 0 && (
+              <>
+                <Pager
+                  paging={state.paging}
+                  page={state.page}
+                  totalPages={totalPages}
+                  totalRows={sortedBody.length}
+                  onFirstPage={() => dispatch({ type: 'SET_PAGE', payload: 1 })}
+                  onPrevPage={() =>
+                    dispatch({ type: 'SET_PAGE', payload: Math.max(1, state.page - 1) })
+                  }
+                  onNextPage={() =>
+                    dispatch({
+                      type: 'SET_PAGE',
+                      payload: Math.min(totalPages, state.page + 1),
+                    })
+                  }
+                  onLastPage={() => dispatch({ type: 'SET_PAGE', payload: totalPages })}
+                  onPageChange={(p) => dispatch({ type: 'SET_PAGE', payload: p })}
+                />
+
+                <MiniCharts
+                  rowCount={pagedBody.length}
+                  popularTags={popularTags}
+                  hourCounts={hourCounts}
+                />
+
+                <DataTable
+                  header={header}
+                  body={pagedBody}
+                  hiddenCols={state.hiddenCols}
+                  columnOrder={state.columnOrder}
+                  sortKeys={state.sortKeys}
+                  onSort={handleSort}
+                />
+              </>
+            )}
+          </section>
+        </div>
+
+        <ColumnChooserModal
+          show={state.showColsModal}
           header={header}
-          popularTags={popularTags}
-          selectedTags={state.selectedTags}
+          columnOrder={state.columnOrder}
           hiddenCols={state.hiddenCols}
-          runs={runs}
-          csvPath={state.csvPath}
-          onToggleTag={(t) => dispatch({ type: 'TOGGLE_TAG', payload: t })}
+          onClose={() => dispatch({ type: 'SET_SHOW_COLS_MODAL', payload: false })}
           onToggleColumn={(i) => dispatch({ type: 'TOGGLE_COLUMN', payload: i })}
-          onRunSelect={handleCsvPathChange}
+          onOrderChange={handleColumnOrderChange}
+          onReset={() => dispatch({ type: 'RESET_COLUMNS' })}
         />
 
-        <section
-          className={`card ${state.wrap ? 'wrap-on' : ''}`}
-          aria-labelledby="filtered-section-header"
-          role="region"
-        >
-          <h2 id="filtered-section-header" className="section-header">
-            Filtered Rows
-          </h2>
+        {state.copied && (
+          <div className="copied-tip" role="status" aria-live="polite">
+            {state.copied}
+          </div>
+        )}
 
-          {state.loading && (
-            <div className="pill" role="status" aria-live="assertive">
-              Loading…
-            </div>
-          )}
+        <CommandPalette
+          open={showCommandPalette}
+          onClose={() => setShowCommandPalette(false)}
+          tags={popularTags.map(([t]) => t)}
+          runs={runs.map((r) => r.name)}
+          applyFilter={handleApplyFilter}
+        />
 
-          {state.error && (
-            <div className="pill error" role="alert" aria-live="assertive">
-              {state.error}
-              <button style={{ marginLeft: 8 }} onClick={loadCsv}>
-                Reload
-              </button>
-            </div>
-          )}
-
-          {!state.loading && !state.error && header.length === 0 && (
-            <div className="pill" role="status" aria-live="polite">
-              No data loaded. Pick a run in the sidebar or set VITE_DEFAULT_CSV.
-            </div>
-          )}
-
-          {header.length > 0 && (
-            <>
-              <Pager
-                paging={state.paging}
-                page={state.page}
-                totalPages={totalPages}
-                totalRows={sortedBody.length}
-                onFirstPage={() => dispatch({ type: 'SET_PAGE', payload: 1 })}
-                onPrevPage={() =>
-                  dispatch({ type: 'SET_PAGE', payload: Math.max(1, state.page - 1) })
-                }
-                onNextPage={() =>
-                  dispatch({
-                    type: 'SET_PAGE',
-                    payload: Math.min(totalPages, state.page + 1),
-                  })
-                }
-                onLastPage={() => dispatch({ type: 'SET_PAGE', payload: totalPages })}
-                onPageChange={(p) => dispatch({ type: 'SET_PAGE', payload: p })}
-              />
-
-              <MiniCharts
-                rowCount={pagedBody.length}
-                popularTags={popularTags}
-                hourCounts={hourCounts}
-              />
-
-              <DataTable
-                header={header}
-                body={pagedBody}
-                hiddenCols={state.hiddenCols}
-                columnOrder={state.columnOrder}
-                sortKeys={state.sortKeys}
-                onSort={handleSort}
-              />
-            </>
-          )}
-        </section>
-      </div>
-
-      <ColumnChooserModal
-        show={state.showColsModal}
-        header={header}
-        columnOrder={state.columnOrder}
-        hiddenCols={state.hiddenCols}
-        onClose={() => dispatch({ type: 'SET_SHOW_COLS_MODAL', payload: false })}
-        onToggleColumn={(i) => dispatch({ type: 'TOGGLE_COLUMN', payload: i })}
-        onOrderChange={handleColumnOrderChange}
-        onReset={() => dispatch({ type: 'RESET_COLUMNS' })}
-      />
-
-      {state.copied && (
-        <div className="copied-tip" role="status" aria-live="polite">
-          {state.copied}
-        </div>
-      )}
-
-      <CommandPalette
-        open={showCommandPalette}
-        onClose={() => setShowCommandPalette(false)}
-        tags={popularTags.map(([t]) => t)}
-        runs={runs.map((r) => r.name)}
-        applyFilter={handleApplyFilter}
-      />
-
-      <input
-        ref={fileRef}
-        type="file"
-        name="csv-upload"
-        id="csv-upload"
-        accept=".csv,text/csv"
-        style={{ display: 'none' }}
-        onChange={(e) => {
-          const file = e.target.files?.[0];
-          if (file) {
-            handleFileUpload(file);
-            e.currentTarget.value = '';
-          }
-        }}
-      />
-    </main>
+        <input
+          ref={fileRef}
+          type="file"
+          name="csv-upload"
+          id="csv-upload"
+          accept=".csv,text/csv"
+          style={{ display: 'none' }}
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) {
+              handleFileUpload(file);
+              e.currentTarget.value = '';
+            }
+          }}
+        />
+      </main>
+    </>
   );
 }
 

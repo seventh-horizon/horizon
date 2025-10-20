@@ -39,7 +39,7 @@ export const Toolbar = forwardRef<HTMLInputElement, ToolbarProps>(({
   onOpenDrawer, // ✅ NEW
 }, ref) => {
   return (
-    <header className="toolbar header">
+    <div role="toolbar" aria-label="Table toolbar" className="toolbar header">
       <div className="toolbar-main">
         <div className="toolbar-group">
           <label htmlFor="csvPath" className="sr-only">CSV Path</label>
@@ -83,18 +83,6 @@ export const Toolbar = forwardRef<HTMLInputElement, ToolbarProps>(({
         <div className="toolbar-group">
           <button className="pill" onClick={onWrapToggle}>{wrap ? '↔ No Wrap' : '↩ Wrap Cells'}</button>
           <button className="pill" onClick={onClearTags} disabled={selectedTagsSize === 0}>Clear Tags</button>
-
-          {/* ✅ NEW: Filters button with the test hook Playwright expects */}
-          <button
-            className="pill"
-            type="button"
-            data-test="open-drawer"
-            aria-controls="app-drawer"
-            onClick={onOpenDrawer}
-            title="Open filters drawer"
-          >
-            Filters
-          </button>
         </div>
 
         <div className="toolbar-group">
@@ -157,6 +145,6 @@ export const Toolbar = forwardRef<HTMLInputElement, ToolbarProps>(({
           <button className="pill" onClick={onReload} disabled={loading}>{loading ? 'Loading…' : '⟳ Reload'}</button>
         </div>
       </div>
-    </header>
+    </div>
   );
 });
