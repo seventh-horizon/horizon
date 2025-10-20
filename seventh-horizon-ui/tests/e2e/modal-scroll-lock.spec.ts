@@ -1,7 +1,11 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('Modal scroll-lock + focus restore', () => {
-  test('adds html.modal-open with compensated padding; restores after close', async ({ page }) => {
+test('adds html.modal-open with compensated padding; restores after close', async ({ page }) => {
+  // Give WebKit a bit more room in CI
+  if (test.info().project.name === 'webkit') {
+    test.setTimeout(60_000);
+  }
     await page.goto('/');
 
     const supported = await page.evaluate(() => !!(window as any).SH?.bindModal);
@@ -55,7 +59,19 @@ test.describe('Modal scroll-lock + focus restore', () => {
     );
     expect(hasLockAfter).toBeFalsy();
 
-    // Wait until focus actually returns to the trigger (WebKit on CI needs a beat)
-    await expect(page.locator('#trigger')).toBeFocused({ timeout: 20000 });
+    // Wait until focus actually returns to the trigger (polling avoids throws/races)
+    await expect
+      .poll(
+        async () =>
+          await page.evaluate(
+            () => (document.activeElement as HTMLElement | null)?.id || ''
+          ),
+        {
+          timeout: test.info().project.name === 'webkit' ? 30_000 : 10_000,
+          // optional: slow ramp to give WebKit time post-close
+          intervals: [200, 300, 500, 800, 1200],
+        }
+      )
+      .toBe('trigger');
 });
 });
