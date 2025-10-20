@@ -119,11 +119,14 @@ export function bindModal(modalRoot) {
     trap.close();
     modalRoot.hidden = true;
 
-    // Fallback: ensure focus returns to opener element if present in DOM
+    // Ensure focus returns to opener element on next microtask (WebKit-safe)
     try {
-      if (openerEl && document.contains(openerEl) && typeof openerEl.focus === 'function') {
-        openerEl.focus({ preventScroll: true });
-      }
+      const el = openerEl;
+      queueMicrotask(() => {
+        if (el && document.contains(el) && typeof el.focus === 'function') {
+          el.focus({ preventScroll: true });
+        }
+      });
     } catch {}
     openerEl = null;
   });
