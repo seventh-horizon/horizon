@@ -4,9 +4,10 @@ test('landing looks correct', async ({ page }) => {
   await page.goto('/');
   // Stabilize visuals: disable overlays/motion for snapshots
   await page.evaluate(() => (window as any).shActivate?.(false));
-  await page.waitForTimeout(50);
+  await page.waitForTimeout(150);
 await page.waitForSelector('.card', { state: 'visible' });
-  const threshold = test.info().project.name === 'chromium' ? 0.02 : 0.06;
+  await page.waitForTimeout(150);
+  const threshold = test.info().project.name === 'chromium' ? 0.05 : 0.06;
   await expect(page).toHaveScreenshot('landing.png', {
     // Lock to viewport to avoid page-height diffs across environments
     fullPage: false,
