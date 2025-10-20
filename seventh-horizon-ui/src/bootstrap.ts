@@ -3,7 +3,7 @@ import { mountOverlays } from './setup/overlays';
 import { mountHeader } from './setup/mount-header';
 // NOTE: DEV/test-only helper exposure is appended at the end of boot()
 import { applyThemeTokens } from './lib/theme-tokens';
-import tokens from '../../seventh-horizon-brand/manifests/theme_tokens_v1.3.1.json';
+import tokens from '../../seventh-horizon-brand/manifests/theme_tokens_v1.3.2.json';
 import { initActivation } from './setup/activation-gate';
 
 const boot = () => {
