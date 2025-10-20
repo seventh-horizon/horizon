@@ -5,7 +5,7 @@ import path from 'path';
 // Mode-aware config so we can tweak dev/prod cleanly and keep tests sane.
 export default defineConfig(({ mode }) => {
   const isDev = mode === 'development';
-  const base = process.env.BASE_PATH ?? '/horizon/';
+  const base = process.env.BASE_PATH ?? '/';
 
   return {
     plugins: [react()],
@@ -15,7 +15,7 @@ export default defineConfig(({ mode }) => {
 
     server: {
       port: 5173,
-      open: '/horizon/', // opens directly to the correct base path
+      open: '/', // opens directly to the correct base path
       // host: true, // uncomment if you want LAN access
       fs: {
         // Allow reading from monorepo siblings (e.g., seventh-horizon-brand)
@@ -28,7 +28,7 @@ export default defineConfig(({ mode }) => {
 
     preview: {
       port: 5173,
-      open: '/horizon/', // preview respects base too
+      open: '/', // preview respects base too
     },
 
     build: {

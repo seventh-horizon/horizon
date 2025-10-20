@@ -5,8 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "dev:root": "vite --base=/",
-    "dev:horizon": "vite --base=/horizon/",
+    "dev:root": "vite",
     "build": "vite build",
     "preview": "vite preview",
     "test": "vitest --run",
