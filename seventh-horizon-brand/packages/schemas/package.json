@@ -1,7 +1,12 @@
 {
   "name": "@seventh-horizon/schemas",
-  "version": "0.0.0-cycle3",
-  "private": true,
-  "files": ["theme-tokens.schema.json"],
-  "license": "MIT"
+  "version": "0.1.0",
+  "description": "Canonical JSON Schemas for Seventh Horizon assets",
+  "license": "MIT",
+  "type": "module",
+  "main": "index.js",
+  "exports": {
+    ".": "./index.js",
+    "./theme-tokens.schema.json": "./theme-tokens.schema.json"
+  }
 }

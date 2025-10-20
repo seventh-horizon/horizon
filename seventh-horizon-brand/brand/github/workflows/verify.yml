@@ -1,0 +1,32 @@
+name: Verify brand manifests
+
+on:
+  pull_request:
+    paths:
+      - "manifests/**"
+      - "packages/schemas/**"
+      - "ci/**"
+      - "package.json"
+      - "package-lock.json"
+  push:
+    branches: [ main ]
+    paths:
+      - "manifests/**"
+      - "packages/schemas/**"
+      - "ci/**"
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install
+        run: npm ci
+      - name: Verify manifests
+        run: npm run verify
+        
