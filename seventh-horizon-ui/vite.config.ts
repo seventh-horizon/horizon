@@ -1,5 +1,6 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import path from 'path';
 
 // Mode-aware config so we can tweak dev/prod cleanly and keep tests sane.
 export default defineConfig(({ mode }) => {
@@ -16,6 +17,13 @@ export default defineConfig(({ mode }) => {
       port: 5173,
       open: '/horizon/', // opens directly to the correct base path
       // host: true, // uncomment if you want LAN access
+      fs: {
+        // Allow reading from monorepo siblings (e.g., seventh-horizon-brand)
+        allow: [
+          path.resolve(__dirname, '..'),
+          path.resolve(__dirname, '../seventh-horizon-brand'),
+        ],
+      },
     },
 
     preview: {
