@@ -51,38 +51,33 @@ export function trapFocus(modalDialog) {
 
   function close() {
     document.removeEventListener('keydown', onKeydown, true);
-    try {
-
-      requestAnimationFrame(() => requestAnimationFrame(() => {
-
-        if (previousActive && document.contains(previousActive) && typeof previousActive.focus === 'function') {
-
-          previousActive.focus({ preventScroll: true });
-
-          try { window.scrollTo(0, savedScrollY); } catch {}
-
-        }
-
-      }));
-
-    } catch {
-
-      if (previousActive && document.contains(previousActive) && typeof previousActive.focus === 'function') {
-
-        previousActive.focus({ preventScroll: true });
-
-        try { window.scrollTo(0, savedScrollY); } catch {}
-
-      }
-
-    }
-
-    modalDialog.dispatchEvent(new CustomEvent('sh:modal:closed', { bubbles: true }));
-    // Remove scroll lock and compensation
+    // Remove scroll lock and compensation first so layout/paint settle
     try {
       document.documentElement.classList.remove('modal-open');
       document.documentElement.style.removeProperty('--scrollbar-width');
     } catch {}
+
+    // Defer focus restore until after layout/paint settles.
+    // queueMicrotask + double rAF is the most reliable across WebKit.
+    const target = previousActive;
+    const restore = () => {
+      if (target && document.contains(target) && typeof target.focus === 'function') {
+        try { target.focus({ preventScroll: true }); } catch {}
+        try { window.scrollTo(0, savedScrollY); } catch {}
+      }
+    };
+    try {
+      queueMicrotask(() => {
+        requestAnimationFrame(() => {
+          requestAnimationFrame(restore);
+        });
+      });
+    } catch {
+      // Fallback if queueMicrotask/rAF throw for any reason
+      try { restore(); } catch {}
+    }
+
+    modalDialog.dispatchEvent(new CustomEvent('sh:modal:closed', { bubbles: true }));
   }
 
   return { open, close };
