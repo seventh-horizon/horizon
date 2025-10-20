@@ -18,3 +18,5 @@ ReactDOM.createRoot(rootElement).render(
     {/* </ErrorBoundary> */}
   </React.StrictMode>
 );
+
+import './bootstrap.ts';
