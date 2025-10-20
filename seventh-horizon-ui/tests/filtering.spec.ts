@@ -2,7 +2,10 @@ import { test, expect } from '@playwright/test';
 
 test('landing looks correct', async ({ page }) => {
   await page.goto('/');
-  await page.waitForSelector('.card', { state: 'visible' });
+  // Stabilize visuals: disable overlays/motion for snapshots
+  await page.evaluate(() => (window as any).shActivate?.(false));
+  await page.waitForTimeout(50);
+await page.waitForSelector('.card', { state: 'visible' });
   const threshold = test.info().project.name === 'chromium' ? 0.02 : 0.06;
   await expect(page).toHaveScreenshot('landing.png', {
     // Lock to viewport to avoid page-height diffs across environments

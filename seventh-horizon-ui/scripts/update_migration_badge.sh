@@ -13,11 +13,12 @@ if [[ ! -f "$CHECKLIST" ]]; then
   exit 1
 fi
 
-# Count checked and total tasks (both [ ] and [x])
-checked=$(grep -oiE "- \\[x\\]" "$CHECKLIST" | wc -l | tr -d ' ')
-all=$(grep -oiE "- \\[( |x)\\]" "$CHECKLIST" | wc -l | tr -d ' ')
+# Count checked and total tasks, tolerating 0 matches (grep returns 1 on no matches).
+# Support both '-' and '*' bullets; case-insensitive on 'x'.
+checked=$({ grep -oiE -- '^[[:space:]]*[-*][[:space:]]\[[x]\]' "$CHECKLIST" || true; } | wc -l | tr -d ' ')
+all=$({ grep -oiE -- '^[[:space:]]*[-*][[:space:]]\[( |x)\]' "$CHECKLIST" || true; } | wc -l | tr -d ' ')
 
-if [[ "$all" -eq 0 ]]; then
+if [[ "${all:-0}" -eq 0 ]]; then
   percent=0
 else
   percent=$(( 100 * checked / all ))
@@ -25,17 +26,29 @@ fi
 
 label="migration"
 message="${percent}%"
+
+# Choose a color name based on percent
 color="blue"
-if (( percent >= 90 )); then color="brightgreen"; elif (( percent >= 70 )); then color="green"; elif (( percent >= 50 )); then color="yellow"; elif (( percent >= 30 )); then color="orange"; else color="red"; fi
+if (( percent >= 90 )); then
+  color="brightgreen"
+elif (( percent >= 70 )); then
+  color="green"
+elif (( percent >= 50 )); then
+  color="yellow"
+elif (( percent >= 30 )); then
+  color="orange"
+else
+  color="red"
+fi
 
 # Simple SVG badge (shields-like minimalist)
-# Widths are rough; for simplicity we compute based on message length
 msg_len=${#message}
 label_len=${#label}
 left_w=$(( 6 * label_len + 50 ))
 right_w=$(( 8 * msg_len + 40 ))
 width=$(( left_w + right_w ))
 
+# Default right color is brightgreen; we'll patch it below to the chosen color.
 cat > "$BADGE_FILE" <<SVG
 <svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="20" role="img" aria-label="${label}: ${message}">
   <linearGradient id="s" x2="0" y2="100%">
@@ -57,7 +70,7 @@ cat > "$BADGE_FILE" <<SVG
 </svg>
 SVG
 
-# Adjust right color by chosen color name
+# Map color name to hex
 case "$color" in
   brightgreen) hex="#4c1" ;;
   green)       hex="#97CA00" ;;
@@ -68,7 +81,8 @@ case "$color" in
   *)           hex="#4c1" ;;
 esac
 
-# Patch the second rect fill to chosen color
+# Patch the right-side rect fill to the chosen color
+# macOS/BSD-compatible in-place sed
 sed -i.bak "s/fill=\\\"#4c1\\\"/fill=\\\"$hex\\\"/" "$BADGE_FILE" && rm -f "$BADGE_FILE.bak"
 
 echo "Badge written to $BADGE_FILE (checked=$checked, total=$all, percent=$percent%)"

@@ -41,3 +41,6 @@ dump_*.tar.gz
 
 # --- Misc CI temps ---
 /tmp/*.bak
+
+# editor/backup files
+*.bak

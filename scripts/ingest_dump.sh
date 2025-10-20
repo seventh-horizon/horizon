@@ -5,7 +5,7 @@ tmp="$(mktemp)"; trap 'rm -f "$tmp"' EXIT
 cat > "$tmp"
 
 # If dump includes "# path: ..." markers, respect them and write files
-if grep -qE '^#\s*path:\s+' "$tmp"; then
+if LC_ALL=C grep -qE -- '^#\s*path:\s+' "$tmp"; then
   awk '
     BEGIN{fname="";}
     /^# path:[[:space:]]+/ {
@@ -38,9 +38,13 @@ fi
 # Normalize LF and enforce ASCII; set exec on scripts
 while IFS= read -r -d '' f; do
   # strip CR if any
-  if grep -q $'\r' "$f"; then tr -d '\r' < "$f" > "$f.tmp" && mv "$f.tmp" "$f"; fi
+  if LC_ALL=C grep -q -- $'\r' "$f"; then tr -d '\r' < "$f" > "$f.tmp" && mv "$f.tmp" "$f"; fi
   # ASCII check
-  if LC_ALL=C grep -qP '[^\x00-\x7F]' "$f"; then echo "Non-ASCII in $f" >&2; exit 1; fi
+  # Fail on any byte outside the printable ASCII range 0x20–0x7E
+if LC_ALL=C grep -qE -- '[^ -~]' "$f"; then
+  echo "Non-ASCII in $f" >&2
+  exit 1
+fi
   case "$f" in *.sh|scripts/*.py|tools/*.py) chmod 0755 "$f" ;; esac
 done < <(find . -type f -not -path "./.git/*" -print0)
 

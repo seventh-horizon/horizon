@@ -51,16 +51,33 @@ export function trapFocus(modalDialog) {
 
   function close() {
     document.removeEventListener('keydown', onKeydown, true);
-    if (previousActive && document.contains(previousActive) && typeof previousActive.focus === 'function') {
-      previousActive.focus({ preventScroll: true });
-      try { window.scrollTo(0, savedScrollY); } catch {}
-    }
-    modalDialog.dispatchEvent(new CustomEvent('sh:modal:closed', { bubbles: true }));
-    // Remove scroll lock and compensation
+    // Remove scroll lock and compensation first so layout/paint settle
     try {
       document.documentElement.classList.remove('modal-open');
       document.documentElement.style.removeProperty('--scrollbar-width');
     } catch {}
+
+    // Defer focus restore until after layout/paint settles.
+    // queueMicrotask + double rAF is the most reliable across WebKit.
+    const target = previousActive;
+    const restore = () => {
+      if (target && document.contains(target) && typeof target.focus === 'function') {
+        try { target.focus({ preventScroll: true }); } catch {}
+        try { window.scrollTo(0, savedScrollY); } catch {}
+      }
+    };
+    try {
+      queueMicrotask(() => {
+        requestAnimationFrame(() => {
+          requestAnimationFrame(restore);
+        });
+      });
+    } catch {
+      // Fallback if queueMicrotask/rAF throw for any reason
+      try { restore(); } catch {}
+    }
+
+    modalDialog.dispatchEvent(new CustomEvent('sh:modal:closed', { bubbles: true }));
   }
 
   return { open, close };
@@ -119,16 +136,22 @@ export function bindModal(modalRoot) {
     trap.close();
     modalRoot.hidden = true;
 
-    // Ensure focus returns to opener element on next microtask (WebKit-safe)
-    try {
-      const el = openerEl;
-      queueMicrotask(() => {
-        if (el && document.contains(el) && typeof el.focus === 'function') {
+    // Ensure focus returns to opener element. On WebKit CI, deferring to the next two RAFs
+// is more reliable than a microtask because it runs *after* style/paint + inert toggles.
+try {
+  const el = openerEl;
+  // Double-RAF to run after DOM visibility + inert/aria-hidden changes fully settle.
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      if (el && document.contains(el) && typeof el.focus === 'function') {
+        try {
           el.focus({ preventScroll: true });
-        }
-      });
-    } catch {}
-    openerEl = null;
+        } catch {}
+      }
+    });
+  });
+} catch {}
+openerEl = null;
   });
 
   if (!modalRoot.hasAttribute('hidden')) modalRoot.hidden = true;

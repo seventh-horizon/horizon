@@ -18,3 +18,8 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     </ErrorBoundary>
   </React.StrictMode>
 )
+## Migration Tasks
+
+- [x] Baseline UI boots in CI
+- [ ] Migrate drawers to new motion system
+- [ ] Replace legacy tooltip with SH tooltip
