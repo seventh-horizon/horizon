@@ -50,18 +50,33 @@ export function trapFocus(modalDialog) {
   }
 
   function close() {
+    
     document.removeEventListener('keydown', onKeydown, true);
-    if (previousActive && document.contains(previousActive) && typeof previousActive.focus === 'function') {
-      previousActive.focus({ preventScroll: true });
-      try { window.scrollTo(0, savedScrollY); } catch {}
+
+    // Defer focus restore until layout settles (WebKit needs a double RAF).
+    const restoreFocus = () => {
+      try {
+        if (previousActive && document.contains(previousActive) && typeof previousActive.focus === 'function') {
+          previousActive.focus({ preventScroll: true });
+          try { window.scrollTo(0, savedScrollY); } catch {}
+        }
+      } catch {}
+    };
+    try {
+      requestAnimationFrame(() => requestAnimationFrame(restoreFocus));
+    } catch {
+      // Fallback if RAF is unavailable
+      setTimeout(restoreFocus, 0);
     }
+
     modalDialog.dispatchEvent(new CustomEvent('sh:modal:closed', { bubbles: true }));
+
     // Remove scroll lock and compensation
     try {
       document.documentElement.classList.remove('modal-open');
       document.documentElement.style.removeProperty('--scrollbar-width');
     } catch {}
-  }
+  
 
   return { open, close };
 }
