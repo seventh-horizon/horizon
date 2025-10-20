@@ -137,21 +137,23 @@ export function bindModal(modalRoot) {
     modalRoot.hidden = true;
 
     // Ensure focus returns to opener element. On WebKit CI, deferring to the next two RAFs
-// is more reliable than a microtask because it runs *after* style/paint + inert toggles.
-try {
-  const el = openerEl;
-  // Double-RAF to run after DOM visibility + inert/aria-hidden changes fully settle.
-  requestAnimationFrame(() => {
-    requestAnimationFrame(() => {
+    // is more reliable than a microtask because it runs *after* style/paint + inert toggles.
+    const el = openerEl;
+    const restore = () => {
       if (el && document.contains(el) && typeof el.focus === 'function') {
-        try {
-          el.focus({ preventScroll: true });
-        } catch {}
+        try { el.focus({ preventScroll: true }); } catch {}
       }
-    });
-  });
-} catch {}
-openerEl = null;
+    };
+    try {
+      if (typeof requestAnimationFrame === 'function') {
+        // Double-RAF to run after DOM visibility + inert/aria-hidden changes fully settle.
+        requestAnimationFrame(() => requestAnimationFrame(restore));
+      } else {
+        setTimeout(restore, 0);
+      }
+    } finally {
+      openerEl = null;
+    }
   });
 
   if (!modalRoot.hasAttribute('hidden')) modalRoot.hidden = true;
