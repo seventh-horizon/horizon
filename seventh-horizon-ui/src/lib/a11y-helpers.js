@@ -67,6 +67,8 @@ export function trapFocus(modalDialog) {
 }
 
 export function bindModal(modalRoot) {
+  // Track the element that had focus when the modal was opened (the "opener")
+  let openerEl = null;
   const dialog = modalRoot.querySelector('.modal__dialog') || modalRoot;
   modalRoot.setAttribute('role', modalRoot.getAttribute('role') || 'dialog');
   modalRoot.setAttribute('aria-modal', 'true');
@@ -103,10 +105,28 @@ export function bindModal(modalRoot) {
     });
   };
 
-  // Open: show + set backdrop a11y + trap focus
-  modalRoot.addEventListener('sh:modal:open',  () => { modalRoot.hidden = false; setBackdropA11y(true);  trap.open();  });
+  // Open: capture opener, show + set backdrop a11y + trap focus
+  modalRoot.addEventListener('sh:modal:open',  () => {
+    openerEl = (document.activeElement instanceof HTMLElement) ? document.activeElement : null;
+    modalRoot.hidden = false;
+    setBackdropA11y(true);
+    trap.open();
+  });
+
   // Close: remove backdrop a11y FIRST, then restore focus via trap.close(), then hide
-  modalRoot.addEventListener('sh:modal:close', () => { setBackdropA11y(false);  trap.close();            modalRoot.hidden = true; });
+  modalRoot.addEventListener('sh:modal:close', () => {
+    setBackdropA11y(false);
+    trap.close();
+    modalRoot.hidden = true;
+
+    // Fallback: ensure focus returns to opener element if present in DOM
+    try {
+      if (openerEl && document.contains(openerEl) && typeof openerEl.focus === 'function') {
+        openerEl.focus({ preventScroll: true });
+      }
+    } catch {}
+    openerEl = null;
+  });
 
   if (!modalRoot.hasAttribute('hidden')) modalRoot.hidden = true;
 
