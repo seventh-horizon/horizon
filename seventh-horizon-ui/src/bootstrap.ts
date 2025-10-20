@@ -76,3 +76,22 @@ try {
     }).catch(()=>{});
   }
 } catch {}
+
+// ------------------------------------------------------------------------------------
+// DEV / TEST ONLY: expose minimal helpers so Playwright specs can interact with the UI.
+// We avoid a dynamic import for overlays (already statically imported) to prevent Vite's
+// "also statically imported" warning, but we lazy-load a11y-helpers.
+// ------------------------------------------------------------------------------------
+try {
+  const env: any = (import.meta as any).env || {};
+  if (env?.DEV || env?.VITEST) {
+    (window as any).SH = (window as any).SH || {};
+    // Avoid dynamic import for overlays to eliminate the warning you saw:
+    (window as any).mountOverlays = mountOverlays;
+
+    // Lazy import bindModal so it isn't pulled into prod bundles
+    import('./lib/a11y-helpers.js')
+      .then(mod => { (window as any).SH.bindModal = mod.bindModal; })
+      .catch(() => {});
+  }
+} catch {}

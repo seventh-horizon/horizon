@@ -1,8 +1,8 @@
 /**
  * Seventh Horizon UI — A11y helpers
- *  - Focus trap for modals (with scroll lock + aria-hidden/inert background)
- *  - Tooltip hover/ESC behavior (with cleanup)
- *  - Toast stacking (debounced via rAF + MutationObserver)
+ *  - Focus trap for modals
+ *  - Tooltip hover/ESC behavior
+ *  - Toast stacking (with observer teardown)
  */
 
 export function trapFocus(modalDialog) {
@@ -73,17 +73,14 @@ export function bindModal(modalRoot) {
   if (!dialog.hasAttribute('tabindex')) dialog.setAttribute('tabindex', '-1');
 
   const trap = trapFocus(dialog);
+
   const closeOnBackdrop = (e) => {
     if (e.target === e.currentTarget || e.target.classList.contains('modal__backdrop')) {
-      e.stopPropagation(); trap.close(); modalRoot.hidden = true;
+      e.stopPropagation(); modalRoot.dispatchEvent(new CustomEvent('sh:modal:close', { bubbles: true }));
     }
   };
 
   modalRoot.addEventListener('click', closeOnBackdrop);
-  modalRoot.addEventListener('sh:modal:open',  () => { modalRoot.hidden = false; trap.open();  });
-  modalRoot.addEventListener('sh:modal:close', () => { trap.close();        modalRoot.hidden = true; });
-
-  if (!modalRoot.hasAttribute('hidden')) modalRoot.hidden = true;
 
   // Inert + aria-hidden for non-modal siblings (progressively enhanced)
   const siblings = () => Array.from(document.body.children).filter(n => !modalRoot.contains(n));
@@ -105,8 +102,13 @@ export function bindModal(modalRoot) {
       } catch {}
     });
   };
-  modalRoot.addEventListener('sh:modal:open',  () => setBackdropA11y(true));
-  modalRoot.addEventListener('sh:modal:close', () => setBackdropA11y(false));
+
+  // Open: show + set backdrop a11y + trap focus
+  modalRoot.addEventListener('sh:modal:open',  () => { modalRoot.hidden = false; setBackdropA11y(true);  trap.open();  });
+  // Close: remove backdrop a11y FIRST, then restore focus via trap.close(), then hide
+  modalRoot.addEventListener('sh:modal:close', () => { setBackdropA11y(false);  trap.close();            modalRoot.hidden = true; });
+
+  if (!modalRoot.hasAttribute('hidden')) modalRoot.hidden = true;
 
   return {
     open: () => modalRoot.dispatchEvent(new CustomEvent('sh:modal:open',  { bubbles: true })),
@@ -120,8 +122,8 @@ export function bindTooltips() {
     if (e.key === 'Escape') {
       document.querySelectorAll('.tooltip[data-open="true"]').forEach(tip => {
         tip.removeAttribute('data-open');
-        const trigger = document.querySelector(`[data-tooltip-id="\${tip.id}"]`);
-        if (trigger) trigger.focus({ preventScroll: true });
+        const trigger = document.querySelector(`[data-tooltip-id="${tip.id}"]`);
+        if (trigger) (trigger).focus?.({ preventScroll: true });
       });
     }
   };
@@ -137,7 +139,10 @@ export function bindTooltips() {
     const open  = () => tip.setAttribute('data-open', 'true');
     const close = () => { if (!overTip) tip.removeAttribute('data-open'); };
 
-    const onEnter = open, onFocus = open, onLeave = close, onBlur = close;
+    const onEnter = open;
+    const onFocus = open;
+    const onLeave = close;
+    const onBlur  = close;
     el.addEventListener('mouseenter', onEnter);
     el.addEventListener('focus', onFocus);
     el.addEventListener('mouseleave', onLeave);

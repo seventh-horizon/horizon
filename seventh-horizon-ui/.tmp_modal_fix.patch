@@ -1,0 +1,27 @@
+diff --git a/src/lib/a11y-helpers.js b/src/lib/a11y-helpers.js
+index 6f20d1f..c9b7a1e 100644
+--- a/src/lib/a11y-helpers.js
++++ b/src/lib/a11y-helpers.js
+@@ -69,17 +69,12 @@ export function bindModal(modalRoot) {
+   modalRoot.addEventListener('click', closeOnBackdrop);
+-  modalRoot.addEventListener('sh:modal:open',  () => { modalRoot.hidden = false; trap.open();  });
+-  modalRoot.addEventListener('sh:modal:close', () => { trap.close();        modalRoot.hidden = true; });
+-
+-  if (!modalRoot.hasAttribute('hidden')) modalRoot.hidden = true;
+-
+   // Inert + aria-hidden for non-modal siblings (progressively enhanced)
+   const siblings = () => Array.from(document.body.children).filter(n => !modalRoot.contains(n));
+   const setBackdropA11y = (on) => {
+@@
+   };
+-  modalRoot.addEventListener('sh:modal:open',  () => setBackdropA11y(true));
+-  modalRoot.addEventListener('sh:modal:close', () => setBackdropA11y(false));
++  // Open: show + set backdrop a11y + trap focus
++  modalRoot.addEventListener('sh:modal:open',  () => { modalRoot.hidden = false; setBackdropA11y(true);  trap.open();  });
++  // Close: remove backdrop a11y FIRST, then restore focus via trap.close(), then hide
++  modalRoot.addEventListener('sh:modal:close', () => { setBackdropA11y(false);  trap.close();            modalRoot.hidden = true; });
++
++  if (!modalRoot.hasAttribute('hidden')) modalRoot.hidden = true;
+ 
+   return {
+     open: () => modalRoot.dispatchEvent(new CustomEvent('sh:modal:open',  { bubbles: true })),

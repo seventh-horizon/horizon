@@ -7,7 +7,6 @@ test.describe('Modal scroll-lock + focus restore', () => {
     const supported = await page.evaluate(() => !!(window as any).SH?.bindModal);
     test.skip(!supported, 'bindModal is not exposed on window.SH in this test build');
 
-    // create a minimal modal and bind it
     await page.evaluate(() => {
       const root = document.createElement('div');
       root.className = 'modal';
@@ -21,10 +20,7 @@ test.describe('Modal scroll-lock + focus restore', () => {
         </div>`;
       document.body.appendChild(root);
       (window as any).SH.bindModal(root);
-    });
 
-    // focus a trigger
-    await page.evaluate(() => {
       const trigger = document.createElement('button');
       trigger.id = 'trigger';
       trigger.textContent = 'open';
@@ -32,7 +28,6 @@ test.describe('Modal scroll-lock + focus restore', () => {
       document.getElementById('trigger')?.focus();
     });
 
-    // open modal
     await page.evaluate(() => {
       const root = document.querySelector('.modal')!;
       root.dispatchEvent(new CustomEvent('sh:modal:open', { bubbles: true }));
@@ -47,9 +42,8 @@ test.describe('Modal scroll-lock + focus restore', () => {
     const pr = await page.evaluate(() =>
       getComputedStyle(document.documentElement).paddingRight
     );
-    expect(pr).toMatch(/^\d+(\.\d+)?px$/); // 0px allowed if no scrollbar
+    expect(pr).toMatch(/^\d+(\.\d+)?px$/);
 
-    // close modal
     await page.evaluate(() => {
       const root = document.querySelector('.modal')!;
       root.dispatchEvent(new CustomEvent('sh:modal:close', { bubbles: true }));
