@@ -3,30 +3,49 @@ name: Verify brand manifests
 on:
   pull_request:
     paths:
-      - "manifests/**"
-      - "packages/schemas/**"
-      - "ci/**"
-      - "package.json"
-      - "package-lock.json"
+      - 'seventh-horizon-brand/manifests/**'
+      - 'seventh-horizon-brand/packages/schemas/**'
+      - 'seventh-horizon-brand/ci/**'
+      - 'seventh-horizon-brand/package.json'
+      - 'seventh-horizon-brand/package-lock.json'
   push:
     branches: [ main ]
     paths:
-      - "manifests/**"
-      - "packages/schemas/**"
-      - "ci/**"
+      - 'seventh-horizon-brand/manifests/**'
+      - 'seventh-horizon-brand/packages/schemas/**'
+      - 'seventh-horizon-brand/ci/**'
 
 jobs:
   verify:
     runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: seventh-horizon-brand   # all `run:` below execute from here
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: 'seventh-horizon-brand/package-lock.json'
+
       - name: Install
         run: npm ci
-      - name: Verify manifests
+
+      # Explicit AJV check using STABLE, repo-rooted paths (workdir is seventh-horizon-brand)
+      - name: Validate manifests against schema (AJV)
+        run: >
+          npx ajv validate
+          -s ./packages/schemas/theme-tokens.schema.json
+          -d './manifests/theme_tokens_*.json'
+          --spec=draft2020
+
+      # Optional: also run your project verify script if you have extra checks
+      - name: Verify manifests (project script)
         run: npm run verify
         
