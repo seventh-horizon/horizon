@@ -6,6 +6,18 @@ import { applyThemeTokens } from './lib/theme-tokens';
 import tokens from '../../seventh-horizon-brand/manifests/theme_tokens_v1.3.2.json';
 import { initActivation } from './setup/activation-gate';
 
+// Dev-only sanity check for brand manifest integrity
+if (import.meta?.env?.MODE === 'development') {
+  const valid = tokens && typeof tokens === 'object' && Object.keys(tokens as any).length > 0;
+  if (!valid) {
+    console.warn(
+      '[Seventh Horizon UI] ⚠️ Brand manifest missing or invalid — check seventh-horizon-brand/manifests/theme_tokens_v1.3.2.json'
+    );
+  } else {
+    console.info('[Seventh Horizon UI] 🌸 Loaded DreamB brand manifest v1.3.2 successfully.');
+  }
+}
+
 const boot = () => {
   // Activation sets [data-activated] + dataset flags; overlays are hidden if not active.
   initActivation();
@@ -58,24 +70,6 @@ if (document.readyState === 'loading') {
 } else {
   boot();
 }
-
-// ------------------------------------------------------------------------------------
-// DEV / TEST-ONLY: expose minimal helpers so Playwright stubs can interact with the UI
-// These are tree-shaken in prod and guarded at runtime.
-// ------------------------------------------------------------------------------------
-try {
-  const env: any = (import.meta as any).env || {};
-  if (env.DEV || env.VITEST) {
-    (window as any).SH = (window as any).SH || {};
-    // Lazy import to avoid pulling code into non-test pathways eagerly
-    import('./lib/a11y-helpers.js').then(mod => {
-      (window as any).SH.bindModal = mod.bindModal;
-    }).catch(()=>{});
-    import('./setup/overlays').then(mod => {
-      (window as any).mountOverlays = mod.mountOverlays;
-    }).catch(()=>{});
-  }
-} catch {}
 
 // ------------------------------------------------------------------------------------
 // DEV / TEST ONLY: expose minimal helpers so Playwright specs can interact with the UI.
