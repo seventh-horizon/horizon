@@ -1,5 +1,5 @@
 {
-  "$schema": "../packages/schemas/theme-tokens.schema.json",
+  "$schema": "https://seventh-horizon.dev/schemas/theme-tokens.schema.json",
   "version": "1.3.1",
   "brand": "DreamB",
   "meta": {
@@ -11,15 +11,37 @@
     "surface": "#13151b",
     "text": "#ffffff",
     "border": "rgba(255,255,255,0.08)",
-    "focusRingHSL": [210, 100, 56],
+    "focusRingHSL": [
+      210,
+      100,
+      56
+    ],
     "ambient": {
-      "cyan": [50, 242, 254],
-      "violet": [127, 111, 233],
-      "magenta": [161, 49, 197],
-      "navy": [26, 22, 53]
+      "cyan": [
+        50,
+        242,
+        254
+      ],
+      "violet": [
+        127,
+        111,
+        233
+      ],
+      "magenta": [
+        161,
+        49,
+        197
+      ],
+      "navy": [
+        26,
+        22,
+        53
+      ]
     }
   },
-  "radii": { "default": 8 },
+  "radii": {
+    "default": 8
+  },
   "shadow": {
     "elev1": "0 8px 24px rgba(0,0,0,0.35)",
     "elev2": "0 12px 32px rgba(0,0,0,0.40)"
