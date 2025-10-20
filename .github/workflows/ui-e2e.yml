@@ -1,0 +1,22 @@
+name: ui-e2e
+on:
+  pull_request:
+    paths:
+      - "seventh-horizon-ui/**"
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: seventh-horizon-ui
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '20' }
+      - run: npm ci || npm i
+      - run: npx playwright install --with-deps
+      - name: Run tests with dev server
+        run: |
+          npx concurrently -k \
+            "npm run dev:root" \
+            "npx wait-on http://localhost:5173 && npx playwright test tests/e2e"
