@@ -1,4 +1,1 @@
-# Branding CI
-- Lints manifests
-- Validates against @seventh-horizon/schemas
-- Publishes new manifest versions for UI consumption
+CI stubs for brand verification/publish will live here (Cycle 4).
