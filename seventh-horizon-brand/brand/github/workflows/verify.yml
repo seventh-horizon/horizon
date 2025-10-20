@@ -39,11 +39,12 @@ jobs:
 
       # Explicit AJV check using STABLE, repo-rooted paths (workdir is seventh-horizon-brand)
       - name: Validate manifests against schema (AJV)
-        run: >
-          npx ajv validate
-          -s ./packages/schemas/theme-tokens.schema.json
-          -d './manifests/theme_tokens_*.json'
-          --spec=draft2020
+        run: |
+          npx ajv-cli@5 validate \
+            --spec=draft2020 \
+            --all-errors \
+            -s ./packages/schemas/theme-tokens.schema.json \
+            -d './manifests/theme_tokens_*.json'
 
       # Optional: also run your project verify script if you have extra checks
       - name: Verify manifests (project script)
