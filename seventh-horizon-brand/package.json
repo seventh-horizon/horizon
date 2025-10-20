@@ -2,10 +2,21 @@
   "name": "seventh-horizon-brand",
   "private": true,
   "version": "0.1.0",
-  "description": "DreamB branding workspace: manifests + schemas",
+  "description": "DreamB branding system (tokens, manifests, schemas)",
   "license": "MIT",
-  "type": "module",
-  "exports": {
-    "./manifests/*": "./manifests/*"
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "lint": "echo \"(placeholder)\"",
+    "test": "node -e \"console.log('brand OK')\"",
+    "verify": "node ci/verify-manifests.mjs"
+  },
+  "main": "index.js",
+  "keywords": [],
+  "author": "",
+  "devDependencies": {
+    "ajv": "^8.17.1",
+    "ajv-formats": "^3.0.1"
   }
 }
