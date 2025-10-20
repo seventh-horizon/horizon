@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 
 test('header stays above symbolic overlays', async ({ page }) => {
   await page.goto('/');
-  const header = page.getByRole('banner');
+  const header = page.locator('#sh-header-root');
   const veil = page.locator('.veil-overlay');
 
   // sanity: both exist

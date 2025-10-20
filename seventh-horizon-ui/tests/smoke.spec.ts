@@ -12,7 +12,7 @@ test.describe('UI smoke', () => {
     await expect(main).toBeVisible();
 
     // Overlays are present but non-interactive (pointer-events: none)
-    const veil = page.locator('.veil-overlay');
+    const veil = page.locator('.veil-overlay[data-motion-role="decorative"]').first();
     if (await veil.count()) {
       await expect(veil).toHaveCSS('pointer-events', 'none');
     } else {
@@ -32,7 +32,7 @@ test.describe('UI smoke', () => {
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await page.goto('/');
 
-    const veil = page.locator('.veil-overlay');
+    const veil = page.locator('.veil-overlay[data-motion-role="decorative"]').first();
     if (await veil.count()) {
       await expect(veil).toHaveCSS('animation-name', 'none');
     } else {
