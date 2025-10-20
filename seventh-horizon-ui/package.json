@@ -14,7 +14,7 @@
     "typecheck": "tsc --noEmit",
     "test:watch": "vitest",
     "prepare:e2e": "playwright install --with-deps",
-    "brand:verify": "node scripts/verify-dreamb-tokens.mjs --file ./src/tokens/theme_tokens_v1.3.1.json",
+    "brand:verify": "node scripts/verify-dreamb-tokens.mjs --file ./src/tokens/theme_tokens_v1.3.2.json",
     "prebuild": "node scripts/prebuild-tokens.mjs"
   },
   "dependencies": {

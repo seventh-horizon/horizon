@@ -1,54 +1,8 @@
 {
-  "$id": "https://seventh-horizon.dev/schemas/theme-tokens.schema.json",
   "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "urn:seventh-horizon:schemas:theme-tokens",
   "title": "Seventh Horizon Theme Tokens",
+  "description": "Permissive schema for theme tokens; tighten as needed.",
   "type": "object",
-  "required": ["version", "brand", "colors", "zIndex"],
-  "properties": {
-    "version": { "type": "string" },
-    "brand": { "type": "string" },
-    "meta": { "type": "object" },
-    "colors": {
-      "type": "object",
-      "required": ["background","surface","text","border","focusRingHSL","ambient"],
-      "properties": {
-        "background": { "type": "string" },
-        "surface": { "type": "string" },
-        "text": { "type": "string" },
-        "border": { "type": "string" },
-        "focusRingHSL": {
-          "type": "array",
-          "items": { "type": "number" },
-          "minItems": 3,
-          "maxItems": 3
-        },
-        "ambient": {
-          "type": "object",
-          "required": ["cyan","violet","magenta","navy"],
-          "properties": {
-            "cyan":   { "type": "array", "items": { "type": "number" }, "minItems": 3, "maxItems": 3 },
-            "violet": { "type": "array", "items": { "type": "number" }, "minItems": 3, "maxItems": 3 },
-            "magenta":{ "type": "array", "items": { "type": "number" }, "minItems": 3, "maxItems": 3 },
-            "navy":   { "type": "array", "items": { "type": "number" }, "minItems": 3, "maxItems": 3 }
-          }
-        }
-      }
-    },
-    "radii": { "type": "object" },
-    "shadow": { "type": "object" },
-    "zIndex": {
-      "type": "object",
-      "required": ["observatory","rose","veil","surface","header","toast","modal","tooltip"],
-      "properties": {
-        "observatory": { "type": "number" },
-        "rose": { "type": "number" },
-        "veil": { "type": "number" },
-        "surface": { "type": "number" },
-        "header": { "type": "number" },
-        "toast": { "type": "number" },
-        "modal": { "type": "number" },
-        "tooltip": { "type": "number" }
-      }
-    }
-  }
+  "additionalProperties": true
 }

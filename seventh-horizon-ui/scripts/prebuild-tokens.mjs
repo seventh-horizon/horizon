@@ -5,9 +5,9 @@ import { fileURLToPath } from 'node:url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '..');
 
-const brandSrc = path.resolve(ROOT, '../seventh-horizon-brand/manifests/theme_tokens_v1.3.1.json');
+const brandSrc = path.resolve(ROOT, '../seventh-horizon-brand/manifests/theme_tokens_v1.3.2.json');
 const destDir  = path.resolve(ROOT, 'src/tokens');
-const destFile = path.join(destDir, 'theme_tokens_v1.3.1.json');
+const destFile = path.join(destDir, 'theme_tokens_v1.3.2.json');
 const tmpFile  = destFile + '.tmp';
 
 async function exists(p) {

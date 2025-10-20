@@ -1,0 +1,23 @@
+import { readFile } from 'node:fs/promises';
+import { fileURLToPath } from 'node:url';
+import path from 'node:path';
+import Ajv from 'ajv';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const root = path.resolve(__dirname, '..');
+
+const schema = JSON.parse(
+  await readFile(path.join(root, 'packages/schemas/theme-tokens.schema.json'), 'utf8')
+);
+
+const ajv = new Ajv({ strict: true, allErrors: true });
+const validate = ajv.compile(schema);
+
+const manifestPath = path.join(root, 'manifests/theme_tokens_v1.3.2.json');
+const manifest = JSON.parse(await readFile(manifestPath, 'utf8'));
+
+if (!validate(manifest)) {
+  console.error('❌ Token manifest failed schema validation:\n', validate.errors);
+  process.exit(1);
+}
+console.log('✅ Token manifest passes schema validation:', path.basename(manifestPath));
