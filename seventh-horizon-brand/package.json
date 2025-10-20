@@ -1,0 +1,9 @@
+{
+  "name": "seventh-horizon-brand",
+  "private": true,
+  "version": "0.1.0",
+  "description": "DreamB branding system (tokens, assets, schemas, manifests)",
+  "workspaces": [
+    "packages/*"
+  ]
+}
