@@ -7,6 +7,9 @@ on:
       - '.github/workflows/migration-badge.yml'
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   badge:
     runs-on: ubuntu-latest
@@ -17,7 +20,7 @@ jobs:
       - name: Make script executable
         run: chmod +x ./seventh-horizon-ui/scripts/update_migration_badge.sh
 
-      - name: Generate migration badge
+      - name: Generate badge
         run: bash ./seventh-horizon-ui/scripts/update_migration_badge.sh
 
       - name: Upload badge artifact
@@ -26,14 +29,13 @@ jobs:
           name: migration-badge
           path: seventh-horizon-ui/badges/migration-progress.svg
 
-      # Optional: auto-commit the updated badge back to the repo (uncomment to enable)
-      # - name: Commit badge back to repo
-      #   if: github.ref == 'refs/heads/main'
-      #   run: |
-      #     if [[ -n "$(git status --porcelain)" ]]; then
-      #       git config user.name "github-actions[bot]"
-      #       git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-      #       git add seventh-horizon-ui/badges/migration-progress.svg
-      #       git commit -m "chore(ui): update migration badge [skip ci]"
-      #       git push
-      #     fi
+      - name: Commit badge back to repo
+        if: github.ref == 'refs/heads/main'
+        run: |
+          if [[ -n "$(git status --porcelain)" ]]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add seventh-horizon-ui/badges/migration-progress.svg
+            git commit -m "chore(ui): update migration badge [skip ci]"
+            git push
+          fi
