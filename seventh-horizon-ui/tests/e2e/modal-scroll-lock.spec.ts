@@ -1,9 +1,13 @@
 import { test, expect } from '@playwright/test';
+
 test.describe('Modal scroll-lock + focus restore', () => {
   test('adds html.modal-open with compensated padding; restores after close', async ({ page }) => {
     await page.goto('/');
+
     const supported = await page.evaluate(() => !!(window as any).SH?.bindModal);
     test.skip(!supported, 'bindModal is not exposed on window.SH in this test build');
+
+    // create a minimal modal and bind it
     await page.evaluate(() => {
       const root = document.createElement('div');
       root.className = 'modal';
@@ -18,6 +22,8 @@ test.describe('Modal scroll-lock + focus restore', () => {
       document.body.appendChild(root);
       (window as any).SH.bindModal(root);
     });
+
+    // focus a trigger
     await page.evaluate(() => {
       const trigger = document.createElement('button');
       trigger.id = 'trigger';
@@ -25,27 +31,39 @@ test.describe('Modal scroll-lock + focus restore', () => {
       document.body.appendChild(trigger);
       document.getElementById('trigger')?.focus();
     });
+
+    // open modal
     await page.evaluate(() => {
       const root = document.querySelector('.modal')!;
       root.dispatchEvent(new CustomEvent('sh:modal:open', { bubbles: true }));
     });
+
     await page.waitForTimeout(50);
-    expect(await page.evaluate(() =>
+    const hasLock = await page.evaluate(() =>
       document.documentElement.classList.contains('modal-open')
-    )).toBeTruthy();
-    expect(await page.evaluate(() =>
+    );
+    expect(hasLock).toBeTruthy();
+
+    const pr = await page.evaluate(() =>
       getComputedStyle(document.documentElement).paddingRight
-    )).toMatch(/^\d+(\.\d+)?px$/);
+    );
+    expect(pr).toMatch(/^\d+(\.\d+)?px$/); // 0px allowed if no scrollbar
+
+    // close modal
     await page.evaluate(() => {
       const root = document.querySelector('.modal')!;
       root.dispatchEvent(new CustomEvent('sh:modal:close', { bubbles: true }));
     });
+
     await page.waitForTimeout(20);
-    expect(await page.evaluate(() =>
+    const hasLockAfter = await page.evaluate(() =>
       document.documentElement.classList.contains('modal-open')
-    )).toBeFalsy();
-    expect(await page.evaluate(() =>
+    );
+    expect(hasLockAfter).toBeFalsy();
+
+    const activeId = await page.evaluate(() =>
       (document.activeElement as HTMLElement | null)?.id || ''
-    )).toBe('trigger');
+    );
+    expect(activeId).toBe('trigger');
   });
 });
