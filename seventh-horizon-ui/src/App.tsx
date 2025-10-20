@@ -34,8 +34,13 @@ function AppRefactored() {
       let initialPath: string | null = import.meta.env.VITE_DEFAULT_CSV || null;
 
       try {
-        const res = await fetch(toPublicUrl('.last-run.json'));
-        if (!cancelled && res.ok) {
+        if (import.meta.env.DEV) {
+          fetch(toPublicUrl('.last-run.json')).catch(() => {});
+        }
+        const res = import.meta.env.DEV
+          ? await fetch(toPublicUrl('.last-run.json'))
+          : undefined;
+        if (!cancelled && res && res.ok) {
           const lastRun = await res.json();
           if (lastRun?.path) initialPath = lastRun.path;
         }

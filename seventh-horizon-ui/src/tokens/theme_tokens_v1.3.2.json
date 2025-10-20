@@ -1,5 +1,5 @@
 {
-  "$schema": "../packages/schemas/theme-tokens.schema.json",
+  "$schema": "https://seventh-horizon.dev/schemas/theme-tokens.schema.json",
   "name": "DreamB / Daylight",
   "version": "1.3.2",
   "colors": {
