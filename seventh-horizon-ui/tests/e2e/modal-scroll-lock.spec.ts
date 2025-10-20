@@ -55,9 +55,15 @@ test.describe('Modal scroll-lock + focus restore', () => {
     );
     expect(hasLockAfter).toBeFalsy();
 
-    const activeId = await page.evaluate(() =>
-      (document.activeElement as HTMLElement | null)?.id || ''
-    );
+    // Wait for focus to return to the opener to avoid rare timing flakes in CI
+    await page.waitForFunction(() => {
+      const el = document.activeElement as HTMLElement | null;
+      return el?.id === 'trigger';
+    });
+    const activeId = await page.evaluate(() => {
+      const el = document.activeElement as HTMLElement | null;
+      return el?.id || '';
+    });
     expect(activeId).toBe('trigger');
   });
 });
