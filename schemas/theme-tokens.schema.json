@@ -1,0 +1,8 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "urn:seventh-horizon:schemas:theme-tokens",
+  "title": "Seventh Horizon Theme Tokens",
+  "description": "Permissive schema for theme tokens; tighten as needed.",
+  "type": "object",
+  "additionalProperties": true
+}
