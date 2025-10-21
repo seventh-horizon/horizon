@@ -1,3 +1,4 @@
+import './bootstrap';
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App'; // ✅ Correct: Imports the new refactored component
@@ -18,5 +19,3 @@ ReactDOM.createRoot(rootElement).render(
     {/* </ErrorBoundary> */}
   </React.StrictMode>
 );
-
-import './bootstrap.ts';

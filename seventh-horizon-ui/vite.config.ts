@@ -53,5 +53,11 @@ export default defineConfig(({ mode }) => {
 
     // Optional: tighten resolve aliases later if you introduce @/* paths
     // resolve: { alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) } },
+
+    resolve: {
+      alias: {
+        '@brand': path.resolve(__dirname, '../seventh-horizon-brand'),
+      },
+    },
   };
 });
