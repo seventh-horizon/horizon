@@ -1,0 +1,10 @@
+{ "$schema":"https://seventh-horizon.dev/schemas/theme-tokens.schema.json",
+  "version":"1.3.3","brand":"DreamB",
+  "colors":{"brand":{
+    "cyan":{"rgb":"rgb(50, 242, 254)","hex":"#32F2FE"},
+    "violet":{"rgb":"rgb(127, 111, 233)","hex":"#7F6FE9"},
+    "magenta":{"rgb":"rgb(161, 49, 197)","hex":"#A131C5"},
+    "navy":{"rgb":"rgb(26, 22, 53)","hex":"#1A1635"}
+  },
+  "focus":{"rose1":{"hsl":"hsl(330, 90%, 65%)"},"rose2":{"hsl":"hsl(340, 85%, 60%)"}}},
+  "motion":{"signal":{"hue":280},"resonance":0.75,"enabled":true} }
