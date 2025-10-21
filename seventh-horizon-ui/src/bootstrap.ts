@@ -6,7 +6,7 @@ import { mountOverlays } from './setup/overlays';
 import { mountHeader } from './setup/mount-header';
 // NOTE: DEV/test-only helper exposure is appended at the end of boot()
 import { applyThemeTokens } from './lib/theme-tokens';
-import tokens from '../../seventh-horizon-brand/manifests/theme_tokens_v1.3.2.json';
+import tokens from '../../seventh-horizon-brand/manifests/theme_tokens_v1.3.3.json';
 import { initActivation } from './setup/activation-gate';
 
 // Dev-only sanity check for brand manifest integrity
@@ -14,7 +14,7 @@ if (import.meta?.env?.MODE === 'development') {
   const valid = tokens && typeof tokens === 'object' && Object.keys(tokens as any).length > 0;
   if (!valid) {
     console.warn(
-      '[Seventh Horizon UI] ⚠️ Brand manifest missing or invalid — check seventh-horizon-brand/manifests/theme_tokens_v1.3.2.json'
+      '[Seventh Horizon UI] ⚠️ Brand manifest missing or invalid — check seventh-horizon-brand/manifests/theme_tokens_v1.3.3.json'
     );
   } else {
     console.info('[Seventh Horizon UI] 🌸 Loaded DreamB brand manifest v1.3.2 successfully.');
