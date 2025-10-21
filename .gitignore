@@ -27,3 +27,6 @@ tools/out/
 
 # (If timeline JSONs are generated, ignore them too)
 public/field/timeline/*.json
+
+# Big archives
+*.zip
