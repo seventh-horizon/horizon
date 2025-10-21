@@ -1,3 +1,6 @@
+import './styles/veil-motion.css';
+import './styles/rose-focus.css';
+
 // src/bootstrap.ts
 import { mountOverlays } from './setup/overlays';
 import { mountHeader } from './setup/mount-header';

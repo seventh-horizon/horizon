@@ -1,0 +1,32 @@
+/* src/styles/rose-focus.css */
+
+/* Accessible focus ring system (DreamB symbolic palette) */
+:root {
+  --focus-color: var(--rose-accent-1, hsl(330, 90%, 65%));
+  --focus-width: 2px;
+  --focus-offset: 2px;
+  --focus-radius: 8px;
+}
+
+/* Default focus outline for interactive elements */
+:where(button, [role="button"], [tabindex], input, select, textarea, a[href]) {
+  outline: none;
+  border-radius: var(--focus-radius);
+}
+
+:where(button, [role="button"], [tabindex], input, select, textarea, a[href]):focus-visible {
+  outline: var(--focus-width) solid var(--focus-color);
+  outline-offset: var(--focus-offset);
+}
+
+/* Motion-aware transitions for focus ring */
+[data-motion-enabled="true"] :focus-visible {
+  transition: outline-color 0.25s ease, outline-offset 0.25s ease;
+}
+
+/* Reduced motion: no transitions */
+@media (prefers-reduced-motion: reduce) {
+  :focus-visible {
+    transition: none !important;
+  }
+}
