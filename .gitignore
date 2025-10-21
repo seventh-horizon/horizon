@@ -28,5 +28,16 @@ tools/out/
 # (If timeline JSONs are generated, ignore them too)
 public/field/timeline/*.json
 
+# Node/Vite caches
+node_modules/
+**/.vite/
+
+# Big archives
+*.zip
+
+# Node/Vite caches
+node_modules/
+**/.vite/
+
 # Big archives
 *.zip
